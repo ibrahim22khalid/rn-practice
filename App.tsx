@@ -1,20 +1,19 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import FlexboxPractice from "./components/FlexBoxPractice";
+import { ThemeProvider } from "./core/theme/ThemeContext";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import CardsScreen from "./screens/CardsScreen"; 
+import FixedLayoutScreen from "./screens/FixedLayoutScreen";
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider >
+      <ThemeProvider>
+    
+      <CardsScreen />
+    </ThemeProvider>
+    </SafeAreaProvider>
+    
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
