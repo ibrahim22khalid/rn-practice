@@ -1,22 +1,38 @@
 import { Stack } from "expo-router";
+import { ItemsProvider } from "../../../src/data/itemsContext";
 
 export default function AnalyticsLayout() {
   return (
-    <Stack>
-      <Stack.Screen
-        name="analytics"
-        options={{
-          headerShown: false,
-          
-        }}
-      />
+    <ItemsProvider>
+      <Stack>
+        <Stack.Screen
+          name="analytics"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-      <Stack.Screen
-        name="details"
-        options={{
-          headerShown: false,
-        }}
-      />
-    </Stack>
+        <Stack.Screen
+          name="details"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="[id]"
+          options={{
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="form"
+          options={{
+            headerShown: false,
+          }}
+        />
+      </Stack>
+    </ItemsProvider>
   );
 }
