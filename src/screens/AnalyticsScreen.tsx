@@ -22,6 +22,8 @@ import TalkToRafiqIcon from "../assets/icons/talk_to_rafiq.svg";
 import ArrowIcon from "../assets/icons/arrow.svg";
 import RelapseIcon from "../assets/icons/relapse.svg";
 import ProgressChartIcon from "../assets/icons/progress_chart.svg";
+import AppButton from "../components/AppButton";
+import { router } from "expo-router";
 
 // Static, screen-owned demo data — this screen isn't wired to an API yet.
 const ANALYTICS_TABS = ["Overview", "Urges", "Insights"] as const;
@@ -52,88 +54,104 @@ export default function AnalyticsScreen() {
       >
         <Text style={[textStyles.heading1, styles.title]}>Analytics</Text>
 
-      <SegmentedTabs
-        options={[...ANALYTICS_TABS]}
-        value={activeTab}
-        onChange={(value) => setActiveTab(value as AnalyticsTab)}
-      />
+        <SegmentedTabs
+          options={[...ANALYTICS_TABS]}
+          value={activeTab}
+          onChange={(value) => setActiveTab(value as AnalyticsTab)}
+        />
 
-      <Card style={styles.ringCard}>
-        <CircularProgress
-          size={200}
-          strokeWidth={10}
-          progress={(DAYS_CLEAN / GOAL_DAYS) * 100}
-          trackColor={colors.border}
-          progressColor={colors.primary}
-        >
-          <Text style={[textStyles.overline, styles.ringLabel]}>
-            Days Clean
-          </Text>
-          <View style={styles.ringValueRow}>
-            <Text style={[textStyles.heading1, styles.ringValue]}>
-              {DAYS_CLEAN}
+        <Card style={styles.ringCard}>
+          <CircularProgress
+            size={200}
+            strokeWidth={10}
+            progress={(DAYS_CLEAN / GOAL_DAYS) * 100}
+            trackColor={colors.border}
+            progressColor={colors.primary}
+          >
+            <Text style={[textStyles.overline, styles.ringLabel]}>
+              Days Clean
             </Text>
-            <Text style={[textStyles.heading2, { color: colors.textSecondary }]}>
-              d
-            </Text>
-          </View>
-          <Badge variant="success" style={styles.steadfastBadge}>
-            <ProgressIcon width={14} height={14} />
+            <View style={styles.ringValueRow}>
+              <Text style={[textStyles.heading1, styles.ringValue]}>
+                {DAYS_CLEAN}
+              </Text>
+              <Text
+                style={[textStyles.heading2, { color: colors.textSecondary }]}
+              >
+                d
+              </Text>
+            </View>
+            <Badge variant="success" style={styles.steadfastBadge}>
+              <ProgressIcon width={14} height={14} />
+              <Text
+                style={[
+                  textStyles.caption,
+                  styles.badgeText,
+                  { color: colors.success },
+                ]}
+              >
+                STEADFAST
+              </Text>
+            </Badge>
+          </CircularProgress>
+
+          <Badge variant="warning" style={styles.goalBadge}>
+            <CalendarIcon width={14} height={14} />
             <Text
               style={[
                 textStyles.caption,
                 styles.badgeText,
-                { color: colors.success },
+                { color: colors.warning },
               ]}
             >
-              STEADFAST
+              90-day goal: {GOAL_DATE_LABEL}
             </Text>
           </Badge>
-        </CircularProgress>
+        </Card>
 
-        <Badge variant="warning" style={styles.goalBadge}>
-          <CalendarIcon width={14} height={14} />
-          <Text
-            style={[textStyles.caption, styles.badgeText, { color: colors.warning }]}
-          >
-            90-day goal: {GOAL_DATE_LABEL}
-          </Text>
-        </Badge>
-      </Card>
+        <Card style={styles.rafiqCard}>
+          <ListRow
+            icon={<TalkToRafiqIcon width={22} height={22} />}
+            title="Talk to Rafiq"
+            subtitle="Your AI recovery coach"
+            trailing={<ArrowIcon width={18} height={18} />}
+          />
+        </Card>
 
-      <Card style={styles.rafiqCard}>
-        <ListRow
-          icon={<TalkToRafiqIcon width={22} height={22} />}
-          title="Talk to Rafiq"
-          subtitle="Your AI recovery coach"
-          trailing={<ArrowIcon width={18} height={18} />}
-        />
-      </Card>
-
-      <Card style={styles.progressCard} title="Progress">
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <RelapseIcon width={10} height={10} />
-            <Text style={[textStyles.caption, styles.legendLabel]}>Relapse</Text>
+        <Card style={styles.progressCard} title="Progress">
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <RelapseIcon width={10} height={10} />
+              <Text style={[textStyles.caption, styles.legendLabel]}>
+                Relapse
+              </Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View
+                style={[styles.legendLine, { backgroundColor: colors.primary }]}
+              />
+              <Text style={[textStyles.caption, styles.legendLabel]}>
+                Progress
+              </Text>
+            </View>
           </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: colors.primary }]} />
-            <Text style={[textStyles.caption, styles.legendLabel]}>Progress</Text>
-          </View>
-        </View>
 
-        {/* Pre-drawn static chart asset — the shape of this specific 15-day
+          {/* Pre-drawn static chart asset — the shape of this specific 15-day
             streak history is design content, not something derived from
             live data yet, so it's rendered as-is rather than a custom
             chart-drawing component. */}
-        <ProgressChartIcon width="100%" height={140} />
-      </Card>
+          <ProgressChartIcon width="100%" height={140} />
+        </Card>
 
-      <Card title="Your Journey" subtitle="5 streaks tracked">
-        <Text style={[textStyles.caption, styles.journeyNote]}>
-          Past streak lengths are approximate.
-        </Text>
-      </Card>
+        <Card title="Your Journey" subtitle="5 streaks tracked">
+          <Text style={[textStyles.caption, styles.journeyNote]}>
+            Past streak lengths are approximate.
+          </Text>
+        </Card>
+        <AppButton
+          text="Open Details"
+          onPress={() => router.push("/(tabs)/analytics/details")}
+        />
       </ScrollView>
     </View>
   );
