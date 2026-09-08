@@ -1,15 +1,17 @@
+import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
 import { ThemeProvider } from "./src/core/theme/ThemeContext";
-import CardsScreen from "./src/screens/CardsScreen";
+import AppNavigator from "./src/navigation/AppNavigator";
 
 export default function App() {
   return (
-    <SafeAreaProvider >
+    <SafeAreaProvider>
       <ThemeProvider>
-      <CardsScreen />
-    </ThemeProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </ThemeProvider>
     </SafeAreaProvider>
-    
   );
 }
-
