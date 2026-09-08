@@ -23,4 +23,15 @@ export const getTextStyles = (colors: ThemeColors) =>
       fontWeight: "400",
       color: colors.textSecondary,
     },
+    // New: shared uppercase/letter-spaced label style — used for section
+    // headers like "DAYS CLEAN", "MILESTONES", "ACCOUNT", "SUBSCRIPTION".
+    // Added here instead of hardcoding letterSpacing/textTransform inside
+    // each screen's StyleSheet, per the "tokens, not per-screen" rule.
+    overline: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textSecondary,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+    },
   } satisfies Record<string, TextStyle>);

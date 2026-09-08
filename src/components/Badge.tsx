@@ -1,6 +1,7 @@
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { ReactNode } from "react";
 import { useTheme } from "../core/theme/ThemeContext";
+import { Spacing, Radius } from "../core/values/spacing";
 
 type BadgeVariant = "success" | "warning" | "error" | "info" | "neutral";
 
@@ -31,7 +32,7 @@ export default function Badge({
     <View
       style={[
         styles.base,
-        { backgroundColor: `${backgroundColor}20` }, 
+        { backgroundColor: `${backgroundColor}20` },
         { borderColor: backgroundColor },
         style,
       ]}
@@ -46,9 +47,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
+    // Fixed: was a hardcoded 4 — now pulled from the tokens file (Spacing.xs === 4)
+    paddingVertical: Spacing.xs,
+    // Fixed: was a hardcoded 10, which matched no entry in the Spacing scale
+    paddingHorizontal: Spacing.sm,
+    // Fixed: was a hardcoded 999 — now pulled from the tokens file (Radius.full === 999)
+    borderRadius: Radius.full,
     borderWidth: 1,
   },
 });

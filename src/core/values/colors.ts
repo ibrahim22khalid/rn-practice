@@ -17,6 +17,12 @@ const Palette = {
   indigo500: "#4F46E5",
   indigo600: "#4338CA",
   amber500: "#F59E0B",
+  // Added: lighter teal tint for dark-mode primary, so it pops against a
+  // dark background the same way indigo600 was meant to (darker) in light
+  teal400: "#2DD4BF",
+  // Added: the reference design's dark-mode background isn't flat — it's
+  // this deep teal-navy fading from 100% to 85% opacity top-to-bottom.
+  midnightTeal: "#10252B",
 
   // Status
   red500: "#DC2626",
@@ -45,6 +51,9 @@ export type ThemeColors = {
   success: string;
   warning: string;
   info: string;
+  // Two-stop gradient for screen backgrounds: [top, bottom]. For themes
+  // with no gradient (light), both stops are just the flat background.
+  backgroundGradient: [string, string];
 };
 
 export const LightColors: ThemeColors = {
@@ -55,12 +64,17 @@ export const LightColors: ThemeColors = {
   textSecondary: Palette.gray500,
   textDisabled: Palette.gray300,
   border: Palette.gray200,
-  primary: Palette.indigo500,
+  // Fixed: was Palette.indigo500 — the reference design's accent (progress
+  // ring, active tab icons, badges) is teal, not indigo. teal500 was already
+  // defined in the Palette above but never wired into ThemeColors.
+  primary: Palette.teal500,
   secondary: Palette.amber500,
   error: Palette.red500,
   success: Palette.green500,
   warning: Palette.yellow500,
   info: Palette.blue500,
+  // Light theme has no gradient in the reference — flat background both stops.
+  backgroundGradient: [Palette.white, Palette.white],
 };
 
 export const DarkColors: ThemeColors = {
@@ -71,12 +85,18 @@ export const DarkColors: ThemeColors = {
   textSecondary: Palette.gray400,
   textDisabled: Palette.gray600,
   border: Palette.gray700,
-  primary: Palette.indigo600,
+  // Fixed: was Palette.indigo600 — same mismatch as LightColors. Using the
+  // lighter teal400 (not teal500) here so it stays legible against the
+  // dark gray900/gray800 surfaces instead of looking muddy.
+  primary: Palette.teal400,
   secondary: Palette.amber500,
   error: Palette.red600,
   success: Palette.green600,
   warning: Palette.yellow500,
   info: Palette.blue500,
+  // #10252B at 100% up top, fading to 85% opacity (D9 = 0.85*255) by the
+  // bottom — matches the subtle vertical fade in the reference screenshots.
+  backgroundGradient: [`${Palette.midnightTeal}D9`, Palette.midnightTeal],
 };
 
 export { Palette };

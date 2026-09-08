@@ -1,15 +1,31 @@
 // Card.tsx
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, Image, StyleSheet, ViewStyle } from "react-native";
+import { ReactNode } from "react";
 import { useTheme } from "../core/theme/ThemeContext";
 import { getTextStyles } from "../core/values/textStyles";
+import { Spacing, Radius } from "../core/values/spacing";
 
 interface CardProps {
-  title: string;
-  subtitle: string;
+  // Made optional: Card no longer forces the title/subtitle text layout —
+  // omit both and pass `children` instead to use Card as a plain container
+  title?: string;
+  subtitle?: string;
   imageUrl?: string;
+  // New: lets Card wrap arbitrary content (progress rings, charts, list
+  // rows, stat rows) instead of being locked to title/subtitle text only
+  children?: ReactNode;
+  // New: lets the parent control spacing (e.g. marginBottom between cards)
+  // from the layout that places the Card, without hardcoding it inside Card
+  style?: ViewStyle;
 }
 
-export default function Card({ title, subtitle }: CardProps) {
+export default function Card({
+  title,
+  subtitle,
+  imageUrl,
+  children,
+  style,
+}: CardProps) {
   const { colors, isDark } = useTheme();
   const textStyles = getTextStyles(colors);
 
@@ -25,10 +41,14 @@ export default function Card({ title, subtitle }: CardProps) {
           shadowOpacity: isDark ? 0 : 0.08,
           elevation: isDark ? 0 : 2,
         },
+        style,
       ]}
     >
-      <Text style={textStyles.heading2}>{title}</Text>
-      <Text style={textStyles.caption}>{subtitle}</Text>
+      {/* imageUrl was declared but never rendered before — now actually used */}
+      {imageUrl && <Image source={{ uri: imageUrl }} style={styles.image} />}
+      {title && <Text style={textStyles.heading2}>{title}</Text>}
+      {subtitle && <Text style={textStyles.caption}>{subtitle}</Text>}
+      {children}
     </View>
   );
 }
@@ -36,11 +56,18 @@ export default function Card({ title, subtitle }: CardProps) {
 const styles = StyleSheet.create({
   container: {
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
+    // Fixed: was a hardcoded 12, which matched no entry in the Radius scale
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
     // Base shadow properties; actual visibility is toggled via shadowOpacity/elevation above
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
+  },
+  image: {
+    width: "100%",
+    height: 160,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.md,
   },
 });
