@@ -1,7 +1,7 @@
 {
   "name": "rn-practice",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -15,6 +15,7 @@
     "expo": "~57.0.20",
     "expo-blur": "~57.0.2",
     "expo-linear-gradient": "~57.0.1",
+    "expo-router": "~57.0.19",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
     "react-native": "0.86.3",
