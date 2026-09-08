@@ -18,7 +18,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Reads the device's current appearance setting, updates live if the user
   // changes it from the OS settings while the app is open
   const systemScheme = useColorScheme(); // "light" | "dark" | null
-  const [mode, setMode] = useState<ThemeMode>("system");
+  // Defaulted to "dark" instead of "system": with "system", isDark below
+  // falls back to whatever the device's OS appearance is set to — which is
+  // why the app was rendering light on a phone with Light Mode enabled in
+  // settings, even though every screen was designed dark-only. setMode is
+  // still exposed, so a real light/dark toggle can be wired in later.
+  const [mode, setMode] = useState<ThemeMode>("dark");
 
   // "system" defers to the OS; otherwise the user's explicit choice wins
   const isDark = mode === "system" ? systemScheme === "dark" : mode === "dark";
