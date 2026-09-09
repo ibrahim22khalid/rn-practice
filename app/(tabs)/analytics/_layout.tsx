@@ -6,7 +6,7 @@ export default function AnalyticsLayout() {
     <ItemsProvider>
       <Stack>
         <Stack.Screen
-          name="analytics"
+          name="index"
           options={{
             headerShown: false,
           }}

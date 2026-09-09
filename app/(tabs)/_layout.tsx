@@ -1,33 +1,38 @@
+import { View, StyleSheet } from "react-native";
 import { Tabs } from "expo-router";
+import BottomTabBar from "../../src/components/BottomTabBar";
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          position: "absolute",
-          backgroundColor: "transparent",
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        tabBarBackground: () => null,
-      }}
-    >
-      <Tabs.Screen
-        name="analytics"
-        options={{
-          title: "Analytics",
+    <View style={styles.root}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { display: "none" },
+          tabBarShowLabel: false,
         }}
-      />
+      >
+        <Tabs.Screen
+          name="analytics"
+          options={{
+            title: "Analytics",
+          }}
+        />
 
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-        }}
-      />
-    </Tabs>
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+          }}
+        />
+      </Tabs>
+      <BottomTabBar />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

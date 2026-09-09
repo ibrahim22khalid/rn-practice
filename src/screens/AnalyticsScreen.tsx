@@ -80,6 +80,7 @@ export default function AnalyticsScreen() {
               >
                 d
               </Text>
+              
             </View>
             <Badge variant="success" style={styles.steadfastBadge}>
               <ProgressIcon width={14} height={14} />
