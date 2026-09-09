@@ -1,3 +1,7 @@
+// ItemsContext: the single source of truth for the analytics "items" list.
+// It seeds a hardcoded list and exposes `useItems()` so the analytics
+// dashboard, details and form screens share one in-memory list + addItem
+// action without prop drilling.
 import { createContext, useContext, useState, ReactNode } from "react";
 
 export interface PurePathItem {
@@ -41,11 +45,15 @@ interface ItemsContextValue {
   addItem: (item: Omit<PurePathItem, "id">) => void;
 }
 
+// The context itself is private; only the provider and hook are exported.
+// prop drilling is avoided by wrapping the app in <ItemsProvider> and calling useItems() anywhere.
+
 const ItemsContext = createContext<ItemsContextValue | undefined>(undefined);
 
 export function ItemsProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<PurePathItem[]>(SEED_ITEMS);
 
+  // Marks a new item with a unique id and prepends it to the list.
   const addItem = (item: Omit<PurePathItem, "id">) => {
     const newItem: PurePathItem = { ...item, id: Date.now().toString() };
     setItems((prev) => [newItem, ...prev]);
@@ -58,6 +66,7 @@ export function ItemsProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Hook used by any component inside ItemsProvider to reach the context.
 export function useItems(): ItemsContextValue {
   const ctx = useContext(ItemsContext);
   if (!ctx) {

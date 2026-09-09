@@ -1,9 +1,6 @@
 import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-// If this is a bare RN project instead of Expo, swap this import for:
-// import LinearGradient from "react-native-linear-gradient";
-// (default export instead of named, otherwise the same API).
 import { LinearGradient } from "expo-linear-gradient";
 
 import { useTheme } from "../core/theme/ThemeContext";
@@ -80,7 +77,6 @@ export default function AnalyticsScreen() {
               >
                 d
               </Text>
-              
             </View>
             <Badge variant="success" style={styles.steadfastBadge}>
               <ProgressIcon width={14} height={14} />
@@ -112,7 +108,7 @@ export default function AnalyticsScreen() {
 
         <Card style={styles.rafiqCard}>
           <ListRow
-            icon={<TalkToRafiqIcon width={22} height={22} />}
+            icon={<TalkToRafiqIcon width={48} height={48} />}
             title="Talk to Rafiq"
             subtitle="Your AI recovery coach"
             trailing={<ArrowIcon width={18} height={18} />}

@@ -19,6 +19,7 @@ export default function ItemDetailScreen() {
   const insets = useSafeAreaInsets();
   const { items } = useItems();
 
+  // Find the item by id from the context. If not found, show a "not found" message.
   const item = items.find((i) => i.id === id);
 
   return (
