@@ -11,6 +11,9 @@ interface MilestoneCircleProps {
   reached?: boolean;
 }
 
+// MilestoneCircle: one milestone marker in the profile — a numbered circle
+// (e.g. Day 1, Day 7) with a label below. `reached` switches to the primary
+// color; by default all milestones render unreached.
 export default function MilestoneCircle({
   day,
   reached = false,

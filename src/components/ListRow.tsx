@@ -2,13 +2,13 @@ import { Pressable, View, Text, StyleSheet, ViewStyle } from "react-native";
 import { ReactNode } from "react";
 import { useTheme } from "../core/theme/ThemeContext";
 import { getTextStyles } from "../core/values/textStyles";
-import { Spacing, Radius } from "../core/values/spacing";
+import { Spacing } from "../core/values/spacing";
 
 interface ListRowProps {
-  /** Leading icon element, e.g. an imported .svg component instance. */
+  /** Leading element — these icon assets are already fully composed
+   * (their own colored badge/background baked into the .svg), so this is
+   * rendered as-is with no extra wrapper box behind it. */
   icon?: ReactNode;
-  /** Background tint behind the icon (defaults to theme surfaceElevated). */
-  iconBackground?: string;
   title: string;
   subtitle?: string;
   /** Trailing element — a chevron icon, a heart icon, a badge, etc. */
@@ -19,7 +19,6 @@ interface ListRowProps {
 
 export default function ListRow({
   icon,
-  iconBackground,
   title,
   subtitle,
   trailing,
@@ -39,16 +38,7 @@ export default function ListRow({
         style,
       ]}
     >
-      {icon && (
-        <View
-          style={[
-            styles.iconWrap,
-            { backgroundColor: iconBackground ?? colors.surfaceElevated },
-          ]}
-        >
-          {icon}
-        </View>
-      )}
+      {icon && <View style={styles.iconWrap}>{icon}</View>}
 
       <View style={styles.textColumn}>
         <Text style={textStyles.body}>{title}</Text>
@@ -72,11 +62,10 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.md,
-    alignItems: "center",
-    justifyContent: "center",
+    // No background/border-radius here on purpose — each icon asset is
+    // already a complete graphic (its own badge shape and color baked in
+    // for Edit Profile, Recovery Code, Support Pure Path, Talk to Rafiq,
+    // Amanah Access...), so this is spacing-only, not a container.
     marginRight: Spacing.md,
   },
   textColumn: {

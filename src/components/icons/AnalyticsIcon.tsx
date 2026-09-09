@@ -1,3 +1,5 @@
+// AnalyticsIcon: inline SVG chart glyph that tints its stroke by the
+// `active` prop (active = primary, inactive = textSecondary).
 import Svg, { Path } from "react-native-svg";
 
 import { useTheme } from "../../core/theme/ThemeContext";

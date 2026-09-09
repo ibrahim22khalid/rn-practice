@@ -11,6 +11,9 @@ interface BadgeProps {
   style?: ViewStyle;
 }
 
+// Badge: a small pill-shaped tag. The variant picks the accent color
+// (success/warning/error/info/neutral); the text label is whatever children
+// you pass (usually a colored Text or an icon + Text).
 export default function Badge({
   children,
   variant = "neutral",
@@ -47,11 +50,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    // Fixed: was a hardcoded 4 — now pulled from the tokens file (Spacing.xs === 4)
     paddingVertical: Spacing.xs,
-    // Fixed: was a hardcoded 10, which matched no entry in the Spacing scale
     paddingHorizontal: Spacing.sm,
-    // Fixed: was a hardcoded 999 — now pulled from the tokens file (Radius.full === 999)
     borderRadius: Radius.full,
     borderWidth: 1,
   },
