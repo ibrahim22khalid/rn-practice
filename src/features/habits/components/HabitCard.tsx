@@ -11,6 +11,9 @@ interface HabitCardProps {
   onPress: () => void
 }
 
+// HabitCard: a single row in the habits list — the habit name, a
+// Done/Pending badge (driven by doneToday), streak and frequency. Wrapped in
+// a Pressable that navigates to the habit's detail screen.
 export default function HabitCard({ habit, onPress }: HabitCardProps) {
   const { colors } = useTheme()
   const textStyles = getTextStyles(colors)

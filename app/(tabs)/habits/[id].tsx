@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -11,13 +11,20 @@ import Card from "../../../src/components/Card";
 import Badge from "../../../src/components/Badge";
 import AppButton from "../../../src/components/AppButton";
 
+// HabitDetailScreen: shows one habit's details (streak, frequency, a
+// 7-day grid) plus a "Mark as done / Mark as not done" button that flips
+// doneToday in the context and returns to the list, whose count updates by
+// derivation.
 export default function HabitDetailScreen() {
+  
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
-  const { habits, toggleDoneToday } = useHabits();
-
+  
+  const { habits, toggleDoneToday, toggleDayDone } = useHabits();
+  
+// Find the habit by id from the context. If not found, show a "not found" message.
   const habit = habits.find((h) => h.id === id);
 
   const handleToggle = () => {
@@ -68,8 +75,9 @@ export default function HabitDetailScreen() {
                 <Text style={textStyles.overline}>Last seven days</Text>
                 <View style={styles.sevenRow}>
                   {habit.lastSevenDays.map((done, index) => (
-                    <View
+                    <Pressable
                       key={`${habit.id}-${index}`}
+                      onPress={() => toggleDayDone(habit.id, index)}
                       style={[
                         styles.dayBox,
                         {
@@ -79,6 +87,13 @@ export default function HabitDetailScreen() {
                           borderColor: done ? colors.success : colors.border,
                         },
                       ]}
+                      accessible={true}
+                      focusable={true}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: done }}
+                      accessibilityLabel={`Day ${index + 1}: ${
+                        done ? "completed" : "not completed"
+                      }`}
                     >
                       <Text
                         style={[
@@ -92,7 +107,7 @@ export default function HabitDetailScreen() {
                       >
                         {done ? "✓" : " "}
                       </Text>
-                    </View>
+                    </Pressable>
                   ))}
                 </View>
               </View>

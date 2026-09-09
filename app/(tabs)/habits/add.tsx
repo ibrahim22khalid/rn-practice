@@ -22,6 +22,7 @@ import SegmentedTabs from "../../../src/components/SegmentedTabs";
 import AppButton from "../../../src/components/AppButton";
 
 const FREQUENCY_OPTIONS = ["Daily", "Weekly"] as const;
+
 type FrequencyOption = (typeof FREQUENCY_OPTIONS)[number];
 
 export default function AddHabitScreen() {
