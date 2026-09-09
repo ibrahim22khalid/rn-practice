@@ -25,6 +25,13 @@ export default function TabsLayout() {
             title: "Profile",
           }}
         />
+
+        <Tabs.Screen
+          name="habits"
+          options={{
+            title: "Habits",
+          }}
+        />
       </Tabs>
       <BottomTabBar />
     </View>

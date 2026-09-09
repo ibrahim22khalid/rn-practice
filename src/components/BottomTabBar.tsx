@@ -9,6 +9,9 @@ import InactiveAnalyticsIcon from "../assets/icons/non_active_analytics.svg";
 import ActiveProfileIcon from "../assets/icons/active_home_tab.svg";
 import InactiveProfileIcon from "../assets/icons/active_home_tab.svg";
 
+import ActiveHabitsIcon from "../assets/icons/active_habits_tab.svg";
+import InactiveHabitsIcon from "../assets/icons/non_active_habits_tab.svg";
+
 type TabConfig = {
   name: string;
   href: string;
@@ -29,6 +32,12 @@ const TABS: TabConfig[] = [
     activeIcon: ActiveProfileIcon,
     inactiveIcon: InactiveProfileIcon,
   },
+  {
+    name: "habits",
+    href: "/(tabs)/habits",
+    activeIcon: ActiveHabitsIcon,
+    inactiveIcon: InactiveHabitsIcon,
+  },
 ];
 
 export default function BottomTabBar() {
@@ -40,10 +49,13 @@ export default function BottomTabBar() {
     pathname.startsWith("/(tabs)/analytics") || pathname === "/analytics";
   const isProfileActive =
     pathname.startsWith("/(tabs)/profile") || pathname === "/profile";
+  const isHabitsActive =
+    pathname.startsWith("/(tabs)/habits") || pathname === "/habits";
 
   const isFocused = (name: string) => {
     if (name === "analytics") return isAnalyticsActive;
     if (name === "profile") return isProfileActive;
+    if (name === "habits") return isHabitsActive;
     return false;
   };
 
