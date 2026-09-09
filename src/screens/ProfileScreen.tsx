@@ -27,9 +27,10 @@ import ArrowIcon from "../assets/icons/arrow.svg";
 import AvatarWithBadge from "../components/Avatarwithbadge";
 import MilestoneCircle from "../components/Milestonecircle";
 import StatTile from "../components/Stattile";
+import ScoreBadge from "../components/ScoreBadge";
 
 // Static demo data — this screen isn't wired to an API yet.
-const USER_NAME = "HEMA";
+const USER_NAME = "Hema";
 const MILESTONE_DAYS = [1, 3, 7, 14, 21, 30];
 const STATS = { current: 0, best: 5, resets: 5 };
 
@@ -109,14 +110,14 @@ export default function ProfileScreen() {
         <Text style={[textStyles.overline, styles.sectionLabel]}>Account</Text>
         <Card style={styles.listCard}>
           <ListRow
-            icon={<EditProfileIcon width={18} height={18} />}
+            icon={<EditProfileIcon width={40} height={40} />}
             title="Edit Profile"
             subtitle="Name, age, gender"
             trailing={<ArrowIcon width={16} height={16} />}
           />
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <ListRow
-            icon={<RecoveryCodeIcon width={18} height={18} />}
+            icon={<RecoveryCodeIcon width={40} height={40} />}
             title="Recovery Code"
             subtitle="Tap to reveal · Secured with biometrics"
             trailing={<ArrowIcon width={16} height={16} />}
@@ -128,14 +129,14 @@ export default function ProfileScreen() {
         <Text style={[textStyles.overline, styles.sectionLabel]}>Subscription</Text>
         <Card style={styles.listCard}>
           <ListRow
-            icon={<AmmanaIcon width={18} height={18} />}
+            icon={<AmmanaIcon width={12} height={12} />}
             title="Amanah Access"
             subtitle="Full access granted on trust"
-            trailing={<HeartIcon width={18} height={18} />}
+            trailing={<HeartIcon width={20} height={20} />}
           />
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <ListRow
-            icon={<SupportIcon width={18} height={18} />}
+            icon={<SupportIcon width={40} height={40} />}
             title="Support Pure Path"
             subtitle="Help keep the app running for everyone"
             trailing={<ArrowIcon width={16} height={16} />}
@@ -143,15 +144,19 @@ export default function ProfileScreen() {
         </Card>
       </View>
 
-      {/* Privacy & Security section is only partially visible behind the
-          floating tab bar in the reference screenshot (just the header and
-          a faded "Privacy Score / Not locked · Stealth on" row), so its row
-          layout isn't confidently reproducible from what's given. Header
-          included as a placeholder; fill in the row once the full mock is
-          available. */}
-      <Text style={[textStyles.overline, styles.sectionLabel]}>
-        Privacy & Security
-      </Text>
+      <View>
+        <Text style={[textStyles.overline, styles.sectionLabel]}>
+          Privacy & Security
+        </Text>
+        <Card style={styles.listCard}>
+          <ListRow
+            icon={<ScoreBadge value={20} color={colors.warning} />}
+            title="Privacy Score"
+            subtitle="Not locked · Stealth on"
+            trailing={<ArrowIcon width={16} height={16} />}
+          />
+        </Card>
+      </View>
       </ScrollView>
     </View>
   );
@@ -202,3 +207,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
   },
 });
+
+
+
