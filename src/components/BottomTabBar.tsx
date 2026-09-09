@@ -3,11 +3,15 @@ import { useRouter, usePathname } from "expo-router";
 
 import { useTheme } from "../core/theme/ThemeContext";
 
+// BottomTabBar: custom floating tab bar rendered above the expo-router Tabs.
+// It watches usePathname() to decide which of the three tabs is active (a
+// path like /habits/1 still counts as the Habits tab), and router.push() to
+// switch tabs when tapped.
 import ActiveAnalyticsIcon from "../assets/icons/active_analytics_tab.svg";
 import InactiveAnalyticsIcon from "../assets/icons/non_active_analytics.svg";
 
 import ActiveProfileIcon from "../assets/icons/active_home_tab.svg";
-import InactiveProfileIcon from "../assets/icons/active_home_tab.svg";
+import InactiveProfileIcon from "../assets/icons/non_active_home_tab.svg";
 
 import ActiveHabitsIcon from "../assets/icons/active_habits_tab.svg";
 import InactiveHabitsIcon from "../assets/icons/non_active_habits_tab.svg";
@@ -45,12 +49,9 @@ export default function BottomTabBar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAnalyticsActive =
-    pathname.startsWith("/(tabs)/analytics") || pathname === "/analytics";
-  const isProfileActive =
-    pathname.startsWith("/(tabs)/profile") || pathname === "/profile";
-  const isHabitsActive =
-    pathname.startsWith("/(tabs)/habits") || pathname === "/habits";
+  const isAnalyticsActive = pathname.startsWith("/analytics");
+  const isProfileActive = pathname.startsWith("/profile");
+  const isHabitsActive = pathname.startsWith("/habits");
 
   const isFocused = (name: string) => {
     if (name === "analytics") return isAnalyticsActive;
@@ -61,7 +62,7 @@ export default function BottomTabBar() {
 
   return (
     <View style={[styles.wrapper, { bottom: 16 }]}>
-      <View style={[styles.container, { borderColor: colors.border }]}>
+      <View style={[styles.container, { borderColor: "transparent" }]}>
         {TABS.map((tab) => {
           const focused = isFocused(tab.name);
           const Icon = focused ? tab.activeIcon : tab.inactiveIcon;
