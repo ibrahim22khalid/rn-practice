@@ -1,7 +1,7 @@
 // ThemeContext.tsx
 import React, { createContext, useContext, useMemo, useState, ReactNode } from "react";
 import { useColorScheme } from "react-native";
-import { LightColors, DarkColors, ThemeColors } from "../values/colors";
+import { DarkColors, LightColors, ThemeColors } from "../values/colors";
 
 type ThemeMode = "light" | "dark" | "system";
 

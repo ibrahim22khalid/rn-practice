@@ -1,8 +1,8 @@
 import { Pressable, View, Text, StyleSheet, ViewStyle } from "react-native";
 import { ReactNode } from "react";
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
-import { Spacing } from "../core/values/spacing";
+import { useTheme } from "../theme/ThemeContext";
+import { getTextStyles } from "../values/textStyles";
+import { Spacing } from "../values/spacing";
 
 interface ListRowProps {
   /** Leading element — these icon assets are already fully composed

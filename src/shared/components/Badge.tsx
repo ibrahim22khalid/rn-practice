@@ -1,7 +1,7 @@
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { ReactNode } from "react";
-import { useTheme } from "../core/theme/ThemeContext";
-import { Spacing, Radius } from "../core/values/spacing";
+import { useTheme } from "../theme/ThemeContext";
+import { Spacing, Radius } from "../values/spacing";
 
 type BadgeVariant = "success" | "warning" | "error" | "info" | "neutral";
 

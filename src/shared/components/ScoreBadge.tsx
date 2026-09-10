@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
+import { useTheme } from "../theme/ThemeContext";
+import { getTextStyles } from "../values/textStyles";
 
 interface ScoreBadgeProps {
   value: number;

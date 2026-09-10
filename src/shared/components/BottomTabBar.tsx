@@ -1,20 +1,20 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 
-import { useTheme } from "../core/theme/ThemeContext";
+import { useTheme } from "../theme/ThemeContext";
 
 // BottomTabBar: custom floating tab bar rendered above the expo-router Tabs.
 // It watches usePathname() to decide which of the three tabs is active (a
 // path like /habits/1 still counts as the Habits tab), and router.push() to
 // switch tabs when tapped.
-import ActiveAnalyticsIcon from "../assets/icons/active_analytics_tab.svg";
-import InactiveAnalyticsIcon from "../assets/icons/non_active_analytics.svg";
+import ActiveAnalyticsIcon from "../../assets/icons/active_analytics_tab.svg";
+import InactiveAnalyticsIcon from "../../assets/icons/non_active_analytics.svg";
 
-import ActiveProfileIcon from "../assets/icons/active_home_tab.svg";
-import InactiveProfileIcon from "../assets/icons/non_active_home_tab.svg";
+import ActiveProfileIcon from "../../assets/icons/active_home_tab.svg";
+import InactiveProfileIcon from "../../assets/icons/non_active_home_tab.svg";
 
-import ActiveHabitsIcon from "../assets/icons/active_habits_tab.svg";
-import InactiveHabitsIcon from "../assets/icons/non_active_habits_tab.svg";
+import ActiveHabitsIcon from "../../assets/icons/active_habits_tab.svg";
+import InactiveHabitsIcon from "../../assets/icons/non_active_habits_tab.svg";
 
 type TabConfig = {
   name: string;

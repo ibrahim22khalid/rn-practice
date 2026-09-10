@@ -1,7 +1,7 @@
 import { View, StyleSheet } from "react-native";
 import { ReactNode } from "react";
-import { useTheme } from "../core/theme/ThemeContext";
-import { Radius } from "../core/values/spacing";
+import { useTheme } from "../theme/ThemeContext";
+import { Radius } from "../values/spacing";
 
 interface AvatarWithBadgeProps {
   size?: number;

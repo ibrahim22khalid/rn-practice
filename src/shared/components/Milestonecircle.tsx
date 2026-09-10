@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
-import { Spacing, Radius } from "../core/values/spacing";
+import { useTheme } from "../theme/ThemeContext";
+import { getTextStyles } from "../values/textStyles";
+import { Spacing, Radius } from "../values/spacing";
 
 interface MilestoneCircleProps {
   day: number;

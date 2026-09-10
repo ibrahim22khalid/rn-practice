@@ -2,7 +2,7 @@
 // the `active` prop (active = theme primary, inactive = textSecondary).
 import Svg, { Path } from "react-native-svg";
 
-import { useTheme } from "../../core/theme/ThemeContext";
+import { useTheme } from "../../theme/ThemeContext";
 
 export interface TabBarIconProps {
   active?: boolean;

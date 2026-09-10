@@ -1,9 +1,9 @@
 // Card.tsx
 import { Text, View, Image, StyleSheet, ViewStyle } from "react-native";
 import { ReactNode } from "react";
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
-import { Spacing, Radius } from "../core/values/spacing";
+import { useTheme } from "../theme/ThemeContext";
+import { getTextStyles } from "../values/textStyles";
+import { Spacing, Radius } from "../values/spacing";
 
 interface CardProps {
   // Made optional: Card no longer forces the title/subtitle text layout —

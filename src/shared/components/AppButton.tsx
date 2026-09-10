@@ -9,8 +9,8 @@ import {
   GestureResponderEvent,
 } from "react-native";
 import { ReactNode } from "react";
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
+import { useTheme } from "../theme/ThemeContext";
+import { getTextStyles } from "../values/textStyles";
 
 type ButtonVariant = "primary" | "secondary";
 
