@@ -5,29 +5,29 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // (default export instead of named, otherwise the same API).
 import { LinearGradient } from "expo-linear-gradient";
 
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
-import { Spacing } from "../core/values/spacing";
+import { useTheme } from "../../../shared/theme/ThemeContext";
+import { getTextStyles } from "../../../shared/values/textStyles";
+import { Spacing } from "../../../shared/values/spacing";
 
-import Card from "../components/Card";
-import Badge from "../components/Badge";
-import ListRow from "../components/ListRow";
+import Card from "../../../shared/components/Card";
+import Badge from "../../../shared/components/Badge";
+import ListRow from "../../../shared/components/ListRow";
 
 
-import EditProfileIcon from "../assets/icons/edit_profile.svg";
-import SmallStreakIcon from "../assets/icons/small_streak.svg";
-import SeedHopeIcon from "../assets/icons/seed_hope.svg";
-import CupIcon from "../assets/icons/cup.svg";
-import ResetIcon from "../assets/icons/reset.svg";
-import RecoveryCodeIcon from "../assets/icons/recovery_code.svg";
-import AmmanaIcon from "../assets/icons/ammana.svg";
-import SupportIcon from "../assets/icons/support.svg";
-import HeartIcon from "../assets/icons/heart.svg";
-import ArrowIcon from "../assets/icons/arrow.svg";
-import AvatarWithBadge from "../components/Avatarwithbadge";
-import MilestoneCircle from "../components/Milestonecircle";
-import StatTile from "../components/Stattile";
-import ScoreBadge from "../components/ScoreBadge";
+import EditProfileIcon from "../../../assets/icons/edit_profile.svg";
+import SmallStreakIcon from "../../../assets/icons/small_streak.svg";
+import SeedHopeIcon from "../../../assets/icons/seed_hope.svg";
+import CupIcon from "../../../assets/icons/cup.svg";
+import ResetIcon from "../../../assets/icons/reset.svg";
+import RecoveryCodeIcon from "../../../assets/icons/recovery_code.svg";
+import AmmanaIcon from "../../../assets/icons/ammana.svg";
+import SupportIcon from "../../../assets/icons/support.svg";
+import HeartIcon from "../../../assets/icons/heart.svg";
+import ArrowIcon from "../../../assets/icons/arrow.svg";
+import AvatarWithBadge from "../../../shared/components/Avatarwithbadge";
+import MilestoneCircle from "../../../shared/components/Milestonecircle";
+import StatTile from "../../../shared/components/Stattile";
+import ScoreBadge from "../../../shared/components/ScoreBadge";
 
 // Static demo data — this screen isn't wired to an API yet.
 const USER_NAME = "Hema";

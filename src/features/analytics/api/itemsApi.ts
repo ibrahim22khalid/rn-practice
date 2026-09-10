@@ -1,8 +1,7 @@
-// ItemsContext: the single source of truth for the analytics "items" list.
-// It seeds a hardcoded list and exposes `useItems()` so the analytics
-// dashboard, details and form screens share one in-memory list + addItem
-// action without prop drilling.
-import { createContext, useContext, useState, ReactNode } from "react";
+// items_api.ts
+// Data layer for the analytics "items" list: the shared type, the seed
+// data, and simple functions that stand in for real API calls. The
+// context layer (items_context.tsx) is the only consumer of this file.
 
 export interface PurePathItem {
   id: string;
@@ -12,7 +11,7 @@ export interface PurePathItem {
   streakActive: boolean;
 }
 
-const SEED_ITEMS: PurePathItem[] = [
+export const SEED_ITEMS: PurePathItem[] = [
   { id: "1", name: "Morning Prayer Routine", category: "Spiritual", daysOnPath: 15, streakActive: true },
   { id: "2", name: "Gratitude Journaling", category: "Mindfulness", daysOnPath: 12, streakActive: true },
   { id: "3", name: "Daily Walking", category: "Physical", daysOnPath: 21, streakActive: true },
@@ -40,37 +39,13 @@ const SEED_ITEMS: PurePathItem[] = [
   { id: "25", name: "Cold Shower Challenge", category: "Physical", daysOnPath: 5, streakActive: true },
 ];
 
-interface ItemsContextValue {
-  items: PurePathItem[];
-  addItem: (item: Omit<PurePathItem, "id">) => void;
+// Simulates a GET request that fetches the current items list.
+export function fetchItems(): Promise<PurePathItem[]> {
+  return Promise.resolve(SEED_ITEMS);
 }
 
-// The context itself is private; only the provider and hook are exported.
-// prop drilling is avoided by wrapping the app in <ItemsProvider> and calling useItems() anywhere.
-
-const ItemsContext = createContext<ItemsContextValue | undefined>(undefined);
-
-export function ItemsProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<PurePathItem[]>(SEED_ITEMS);
-
-  // Marks a new item with a unique id and prepends it to the list.
-  const addItem = (item: Omit<PurePathItem, "id">) => {
-    const newItem: PurePathItem = { ...item, id: Date.now().toString() };
-    setItems((prev) => [newItem, ...prev]);
-  };
-
-  return (
-    <ItemsContext.Provider value={{ items, addItem }}>
-      {children}
-    </ItemsContext.Provider>
-  );
-}
-
-// Hook used by any component inside ItemsProvider to reach the context.
-export function useItems(): ItemsContextValue {
-  const ctx = useContext(ItemsContext);
-  if (!ctx) {
-    throw new Error("useItems must be used within an ItemsProvider");
-  }
-  return ctx;
+// Simulates a POST request that creates a new item, assigning it an id.
+export function createItem(item: Omit<PurePathItem, "id">): Promise<PurePathItem> {
+  const newItem: PurePathItem = { ...item, id: Date.now().toString() };
+  return Promise.resolve(newItem);
 }

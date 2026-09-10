@@ -3,23 +3,23 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { useTheme } from "../core/theme/ThemeContext";
-import { getTextStyles } from "../core/values/textStyles";
-import { Spacing } from "../core/values/spacing";
+import { useTheme } from "../../../shared/theme/ThemeContext";
+import { getTextStyles } from "../../../shared/values/textStyles";
+import { Spacing } from "../../../shared/values/spacing";
 
-import Card from "../components/Card";
-import Badge from "../components/Badge";
-import ListRow from "../components/ListRow";
-import SegmentedTabs from "../components/SegmentedTabs";
-import CircularProgress from "../components/CircularProgress";
+import Card from "../../../shared/components/Card";
+import Badge from "../../../shared/components/Badge";
+import ListRow from "../../../shared/components/ListRow";
+import SegmentedTabs from "../../../shared/components/SegmentedTabs";
+import CircularProgress from "../../../shared/components/CircularProgress";
 
-import CalendarIcon from "../assets/icons/calendar.svg";
-import ProgressIcon from "../assets/icons/progress.svg";
-import TalkToRafiqIcon from "../assets/icons/talk_to_rafiq.svg";
-import ArrowIcon from "../assets/icons/arrow.svg";
-import RelapseIcon from "../assets/icons/relapse.svg";
-import ProgressChartIcon from "../assets/icons/progress_chart.svg";
-import AppButton from "../components/AppButton";
+import CalendarIcon from "../../../assets/icons/calendar.svg";
+import ProgressIcon from "../../../assets/icons/progress.svg";
+import TalkToRafiqIcon from "../../../assets/icons/talk_to_rafiq.svg";
+import ArrowIcon from "../../../assets/icons/arrow.svg";
+import RelapseIcon from "../../../assets/icons/relapse.svg";
+import ProgressChartIcon from "../../../assets/icons/progress_chart.svg";
+import AppButton from "../../../shared/components/AppButton";
 import { router } from "expo-router";
 
 // Static, screen-owned demo data — this screen isn't wired to an API yet.
