@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { ItemsProvider } from "../../../src/data/itemsContext";
+import { ItemsProvider } from "../../../src/features/analytics/hooks/UseAnalytics";
 
 export default function AnalyticsLayout() {
   return (

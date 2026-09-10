@@ -1,9 +1,9 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { useTheme } from '../../../core/theme/ThemeContext'
-import { getTextStyles } from '../../../core/values/textStyles'
-import { Spacing, Radius } from '../../../core/values/spacing'
-import Card from '../../../components/Card'
-import Badge from '../../../components/Badge'
+import { useTheme } from "../../../shared/theme/ThemeContext";
+import { getTextStyles } from "../../../shared/values/textStyles";
+import { Spacing, Radius } from "../../../shared/values/spacing";
+import Card from "../../../shared/components/Card";
+import Badge from "../../../shared/components/Badge";
 import { Habit } from '../types/habit'
 
 interface HabitCardProps {

@@ -1,6 +1,6 @@
 import { View, StyleSheet } from "react-native";
 import { Tabs } from "expo-router";
-import BottomTabBar from "../../src/components/BottomTabBar";
+import BottomTabBar from "../../src/shared/components/BottomTabBar";
 
 export default function TabsLayout() {
   return (

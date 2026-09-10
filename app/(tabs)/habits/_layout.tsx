@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'
-import { HabitsProvider } from '../../../src/features/habits/context/HabitsContext'
+import { HabitsProvider } from '../../../src/features/habits/hooks/UseHabits'
 
 export default function HabitsLayout() {
   return (

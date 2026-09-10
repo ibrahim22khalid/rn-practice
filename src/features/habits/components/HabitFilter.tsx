@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native'
-import { useTheme } from '../../../core/theme/ThemeContext'
-import { getTextStyles } from '../../../core/values/textStyles'
-import { Spacing, Radius } from '../../../core/values/spacing'
+import { useTheme } from "../../../shared/theme/ThemeContext";
+import { getTextStyles } from "../../../shared/values/textStyles";
+import { Spacing, Radius } from "../../../shared/values/spacing";
 
 type FilterOption = 'all' | 'done' | 'not_done'
 
