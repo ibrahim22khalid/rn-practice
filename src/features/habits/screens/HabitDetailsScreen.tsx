@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -22,7 +22,7 @@ export default function HabitDetailScreen() {
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
   
-  const { habits, toggleDoneToday, toggleDayDone } = useHabits();
+  const { habits, refetch, loading, toggleDoneToday, toggleDayDone } = useHabits();
   
 // Find the habit by id from the context. If not found, show a "not found" message.
   const habit = habits.find((h) => h.id === id);
@@ -48,7 +48,6 @@ export default function HabitDetailScreen() {
             <Text style={[textStyles.heading1, styles.title]}>
               {habit.name}
             </Text>
-            // Show habit details in a card: streak, frequency, last seven days /
             <Card style={styles.detailCard}>
               <View style={styles.detailRow}>
                 <Text style={textStyles.overline}>Streak</Text>
@@ -127,10 +126,18 @@ export default function HabitDetailScreen() {
             />
           </>
         ) : (
-          <View style={styles.centered}>
+          <View style={[styles.centered, { gap: Spacing.md }]}>
             <Text style={[textStyles.heading2, { color: colors.textSecondary }]}>
               Habit not found
             </Text>
+            {loading ? (
+              <ActivityIndicator size="large" color={colors.primary} />
+            ) : (
+              <AppButton
+                text="Retry"
+                onPress={() => refetch()}
+              />
+            )}
           </View>
         )}
       </View>

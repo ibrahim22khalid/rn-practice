@@ -12,6 +12,7 @@ interface HabitsContextValue {
   loading: boolean
   error: boolean
   loadHabits: () => Promise<void>
+  refetch: () => Promise<void>
   toggleDoneToday: (id: string) => void
   addHabit: (name: string, frequency: 'daily' | 'weekly') => void
   toggleDayDone: (id: string, dayIndex: number) => void
@@ -27,11 +28,8 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   // refetch on every list mount and clobber local toggles/additions.
   const hasLoadedRef = useRef(false)
 
-  // Fetch habits from the API. No-ops if we've already loaded so that
-  // client-side changes (toggling doneToday, adding a habit) survive
-  // navigating away and back within the tab.
-  const loadHabits = useCallback(async () => {
-    if (hasLoadedRef.current) return
+  // Core fetch routine shared by loadHabits (guarded) and refetch (forced).
+  const doFetch = async () => {
     setLoading(true)
     setError(false)
     try {
@@ -43,7 +41,21 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Fetch habits from the API. No-ops if we've already loaded so that
+  // client-side changes (toggling doneToday, adding a habit) survive
+  // navigating away and back within the tab.
+  const loadHabits = useCallback(async () => {
+    if (hasLoadedRef.current) return
+    await doFetch()
     //dependencies are empty because we want this function to be stable and not re-created on every render. The state setters (setLoading, setError, setHabits) are stable and don't need to be in the dependency array.
+  }, [])
+
+  // Always refetches from the API, bypassing the hasLoadedRef guard. Used by
+  // the retry buttons shown on the error and empty states.
+  const refetch = useCallback(async () => {
+    await doFetch()
   }, [])
 
   // Flips doneToday for one habit by id. The "done today" count on the list
@@ -99,6 +111,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
         loading,
         error,
         loadHabits,
+        refetch,
         toggleDoneToday,
         addHabit,
         toggleDayDone,

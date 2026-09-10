@@ -5,6 +5,7 @@ export const HABITS: Habit[] = [
     id: '1',
     name: 'Pray Fajr on time',
     streak: 12,
+    
     doneToday: true,
     frequency: 'daily',
     lastSevenDays: [true, true, true, false, true, true, true],
@@ -27,6 +28,14 @@ export const HABITS: Habit[] = [
   },
   {
     id: '4',
+    name: 'Walk 30 minutes',
+    streak: 0,
+    doneToday: false,
+    frequency: 'daily',
+    lastSevenDays: [false, false, false, false, false, false, false],
+  },
+  {
+    id: '5',
     name: 'Walk 30 minutes',
     streak: 0,
     doneToday: false,

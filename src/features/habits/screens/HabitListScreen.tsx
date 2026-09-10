@@ -25,7 +25,7 @@ export default function HabitListScreen() {
   const { colors } = useTheme();
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
-  const { habits, loading, error, loadHabits } = useHabits();
+  const { habits, loading, error, loadHabits, refetch } = useHabits();
   const [filter, setFilter] = useState<FilterOption>("all");
 
   useEffect(() => {
@@ -87,11 +87,13 @@ export default function HabitListScreen() {
           ]}
         >
           <Text style={textStyles.heading2}>Something went wrong</Text>
-          <AppButton
-            text="Retry"
-            isExpanded={false}
-            onPress={() => loadHabits()}
-          />
+          <View style={styles.retryButton}>
+            <AppButton
+              text="Retry"
+              isExpanded={false}
+              onPress={() => refetch()}
+            />
+          </View>
         </View>
       </View>
     );
@@ -127,19 +129,27 @@ export default function HabitListScreen() {
           </View>
         }
         ListEmptyComponent={
-          <View style={[styles.empty, { marginTop: Spacing.lg }]}>
+          <View style={[styles.empty, { gap: Spacing.md }]}>
             <Text style={[textStyles.body, { color: colors.textSecondary }]}>
               {habits.length === 0
                 ? "No habits yet"
                 : "No habits match this filter"}
             </Text>
+            <View style={styles.retryButton}>
+              <AppButton
+                text="Retry"
+                variant="secondary"
+                isExpanded={false}
+                onPress={() => refetch()}
+              />
+            </View>
           </View>
         }
         ListFooterComponent={
           <AppButton
             text="hard-coded id not found to test error handling"
             variant="secondary"
-            onPress={() => router.push("/(tabs)/habits/999")}
+            onPress={() => router.push("/(tabs)/habits/50")}
           />
         }
       />
@@ -161,6 +171,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xxl * 2,
   },
   content: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xxl * 2,
   },
@@ -175,6 +186,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   empty: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  retryButton: {
+    alignSelf: "center",
   },
 });
