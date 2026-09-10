@@ -135,6 +135,13 @@ export default function HabitListScreen() {
             </Text>
           </View>
         }
+        ListFooterComponent={
+          <AppButton
+            text="hard-coded id not found to test error handling"
+            variant="secondary"
+            onPress={() => router.push("/(tabs)/habits/999")}
+          />
+        }
       />
     </View>
   );
