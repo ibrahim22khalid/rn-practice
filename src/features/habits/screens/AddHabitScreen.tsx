@@ -13,11 +13,13 @@ import { useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
 import { Spacing, Radius } from "../../../shared/values/spacing";
-import { useHabits } from "../hooks/UseHabits";
+import { addHabit } from "../api/habitsApi";
+import type { Habit } from "../types/habit";
 import SegmentedTabs from "../../../shared/components/SegmentedTabs";
 import AppButton from "../../../shared/components/AppButton";
 import { required, noDuplicates, validateString } from "../../../shared/utils/validator";
@@ -26,17 +28,29 @@ const FREQUENCY_OPTIONS = ["Daily", "Weekly"] as const;
 
 type FrequencyOption = (typeof FREQUENCY_OPTIONS)[number];
 
+// Validates form state locally and sends valid habits through a React Query mutation.
 export default function AddHabitScreen() {
   const { colors } = useTheme();
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
-  const { habits, addHabit } = useHabits();
+  const queryClient = useQueryClient();
+  const addHabitMutation = useMutation({
+    mutationFn: addHabit,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["habits"] });
+      Keyboard.dismiss();
+      router.back();
+    },
+    onError: () => setError("Could not add habit. Please try again."),
+  });
 
   const [name, setName] = useState("");
   const [frequency, setFrequency] = useState<FrequencyOption>("Daily");
   const [error, setError] = useState<string | undefined>(undefined);
 
-  const handleSave = () => {
+  // Runs the existing validation before starting the add-habit mutation.
+  const handleSave = (): void => {
+    const habits = queryClient.getQueryData<Habit[]>(["habits"]) ?? [];
     const validationError = validateString(name, [
       (value) => required(value, "Name"),
       (value) => noDuplicates(value, habits.map((h) => h.name), "Habit"),
@@ -46,9 +60,10 @@ export default function AddHabitScreen() {
       return;
     }
 
-    addHabit(name, frequency === "Daily" ? "daily" : "weekly");
-    Keyboard.dismiss();
-    router.back();
+    addHabitMutation.mutate({
+      name,
+      frequency: frequency === "Daily" ? "daily" : "weekly",
+    });
   };
 
   return (
@@ -109,7 +124,11 @@ export default function AddHabitScreen() {
               />
             </View>
 
-            <AppButton text="Save" onPress={handleSave} />
+            <AppButton
+              text="Save"
+              onPress={handleSave}
+              isLoading={addHabitMutation.isPending}
+            />
 
             <AppButton
               text="Cancel"

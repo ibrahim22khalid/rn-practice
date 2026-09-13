@@ -5,15 +5,16 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
 
 import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
 import { Spacing } from "../../../shared/values/spacing";
-import { useHabits } from "../hooks/UseHabits";
+import { fetchHabits } from "../api/habitsApi";
 import { Habit } from "../types/habit";
 import HabitCard from "../components/HabitCard";
 import HabitFilter, {
@@ -21,16 +22,17 @@ import HabitFilter, {
 } from "../components/HabitFilter";
 import AppButton from "../../../shared/components/AppButton";
 
+// Displays the shared habits query with local-only filtering and derived counts.
 export default function HabitListScreen() {
   const { colors } = useTheme();
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
-  const { habits, loading, error, loadHabits, refetch } = useHabits();
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ["habits"],
+    queryFn: fetchHabits,
+  });
+  const habits = data ?? [];
   const [filter, setFilter] = useState<FilterOption>("all");
-
-  useEffect(() => {
-    loadHabits();
-  }, [loadHabits]);
 
   const filteredHabits = useMemo(() => {
     if (filter === "done") return habits.filter((h) => h.doneToday);
@@ -53,7 +55,7 @@ export default function HabitListScreen() {
     []
   );
 
-  if (loading) {
+  if (isPending) {
     return (
       <View style={styles.root}>
         <LinearGradient
@@ -72,7 +74,7 @@ export default function HabitListScreen() {
     );
   }
 
-  if (error) {
+  if (isError) {
     return (
       <View style={styles.root}>
         <LinearGradient
