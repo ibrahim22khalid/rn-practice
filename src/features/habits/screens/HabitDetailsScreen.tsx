@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -6,131 +14,169 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
-import { Spacing, Radius } from "../../../shared/values/spacing";
-import {
-  markHabitDone,
-  toggleHabitDay,
+import { Radius, Spacing } from "../../../shared/values/spacing";
+import { failNextMutation, setHabitDayDone } from "../api/habitsApi";
+import type {
+  SetHabitDayDoneInput,
+  SetHabitDoneInput,
 } from "../api/habitsApi";
 import {
-  ALL_HABITS_PARAMS,
-  habitKeys,
-  habitListQueryOptions,
-} from "../api/habitQueries";
-import { Habit } from "../types/habit";
+  createSetHabitDoneMutationOptions,
+  createMutationSubmissionGuard,
+  getAffectedHabitListSnapshots,
+} from "../api/habitMutations";
+import { habitDetailQueryOptions, habitKeys } from "../api/habitQueries";
+import type { Habit } from "../types/habit";
+import HabitMutationCacheInspector from "../components/HabitMutationCacheInspector";
 import Card from "../../../shared/components/Card";
 import Badge from "../../../shared/components/Badge";
 import AppButton from "../../../shared/components/AppButton";
 
-type MutationContext = { previousHabits: Habit[] | undefined };
+type DayMutationContext = Readonly<{
+  previousDetail: Habit | undefined;
+  listSnapshots: ReturnType<typeof getAffectedHabitListSnapshots>;
+}>;
 
-// Shows one route-selected habit while reading and mutating the shared query cache.
+function updateHabitDay(
+  habit: Habit,
+  { dayIndex, done }: SetHabitDayDoneInput,
+): Habit {
+  const lastSevenDays = [...habit.lastSevenDays];
+  const wasDone = lastSevenDays[dayIndex];
+  if (wasDone === done) return habit;
+
+  lastSevenDays[dayIndex] = done;
+  const activeDaysCount = lastSevenDays.filter(Boolean).length;
+  const rawStreak = done ? habit.streak + 1 : habit.streak - 1;
+
+  return {
+    ...habit,
+    lastSevenDays,
+    streak: Math.max(rawStreak, activeDaysCount, 0),
+  };
+}
+
+// Loads and mutates the route-selected habit through its exact detail cache.
 export default function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { data: habits = [], isPending, isError, refetch } = useQuery(
-    habitListQueryOptions(ALL_HABITS_PARAMS),
+  const submissionGuard = useRef(createMutationSubmissionGuard()).current;
+  const [isForcedFailureArmed, setIsForcedFailureArmed] = useState(false);
+  const {
+    data: habit,
+    isPending,
+    isError,
+    refetch,
+  } = useQuery(habitDetailQueryOptions(id));
+
+  const markDoneMutation = useMutation(
+    createSetHabitDoneMutationOptions(queryClient),
   );
-  const habit = habits.find((item) => item.id === id);
-
-  const markDoneMutation = useMutation<
-    Habit,
-    Error,
-    { id: string; doneToday: boolean },
-    MutationContext
-  >({
-    mutationFn: markHabitDone,
-    onMutate: async (updatedHabit) => {
-      await queryClient.cancelQueries({ queryKey: habitKeys.lists() });
-      const previousHabits = queryClient.getQueryData<Habit[]>(
-        habitKeys.list(ALL_HABITS_PARAMS),
-      );
-
-      queryClient.setQueryData<Habit[]>(
-        habitKeys.list(ALL_HABITS_PARAMS),
-        (current = []) =>
-          current.map((item) =>
-            item.id === updatedHabit.id
-              ? { ...item, doneToday: updatedHabit.doneToday }
-              : item,
-          ),
-      );
-
-      return { previousHabits };
-    },
-    onError: (_error, _updatedHabit, context) => {
-      if (context?.previousHabits) {
-        queryClient.setQueryData(
-          habitKeys.list(ALL_HABITS_PARAMS),
-          context.previousHabits,
-        );
-      }
-    },
-    onSuccess: () => router.back(),
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: habitKeys.lists() }),
-  });
 
   const dayMutation = useMutation<
     Habit,
     Error,
-    { id: string; dayIndex: number },
-    MutationContext
+    SetHabitDayDoneInput,
+    DayMutationContext
   >({
-    mutationFn: toggleHabitDay,
-    onMutate: async ({ id: habitId, dayIndex }) => {
+    mutationFn: setHabitDayDone,
+    retry: false,
+    onMutate: async (variables) => {
+      const detailKey = habitKeys.detail(variables.habitId);
       await queryClient.cancelQueries({ queryKey: habitKeys.lists() });
-      const previousHabits = queryClient.getQueryData<Habit[]>(
-        habitKeys.list(ALL_HABITS_PARAMS),
+      await queryClient.cancelQueries({ queryKey: detailKey, exact: true });
+
+      const listSnapshots = getAffectedHabitListSnapshots(
+        queryClient,
+        variables.habitId,
       );
+      const previousDetail = queryClient.getQueryData<Habit>(detailKey);
 
-      queryClient.setQueryData<Habit[]>(
-        habitKeys.list(ALL_HABITS_PARAMS),
-        (current = []) =>
-          current.map((item) => {
-            if (item.id !== habitId) return item;
-
-            const lastSevenDays = [...item.lastSevenDays];
-            const wasDone = lastSevenDays[dayIndex];
-            lastSevenDays[dayIndex] = !wasDone;
-            const activeDaysCount = lastSevenDays.filter(Boolean).length;
-            const rawStreak = wasDone ? item.streak - 1 : item.streak + 1;
-
-            return {
-              ...item,
-              lastSevenDays,
-              streak: Math.max(rawStreak, activeDaysCount, 0),
-            };
-          }),
-      );
-
-      return { previousHabits };
-    },
-    onError: (_error, _variables, context) => {
-      if (context?.previousHabits) {
-        queryClient.setQueryData(
-          habitKeys.list(ALL_HABITS_PARAMS),
-          context.previousHabits,
+      for (const snapshot of listSnapshots) {
+        queryClient.setQueryData<Habit[]>(snapshot.queryKey, (current) =>
+          current?.map((item) =>
+            item.id === variables.habitId
+              ? updateHabitDay(item, variables)
+              : item,
+          ),
         );
       }
+      queryClient.setQueryData<Habit>(detailKey, (current) =>
+        current ? updateHabitDay(current, variables) : current,
+      );
+
+      return { listSnapshots, previousDetail };
     },
-    onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: habitKeys.lists() }),
+    onError: (_error, variables, context) => {
+      if (!context) return;
+      for (const snapshot of context.listSnapshots) {
+        queryClient.setQueryData(snapshot.queryKey, snapshot.previousData);
+      }
+      queryClient.setQueryData(
+        habitKeys.detail(variables.habitId),
+        context.previousDetail,
+      );
+    },
+    onSuccess: async (serverHabit, variables) => {
+      queryClient.setQueryData(
+        habitKeys.detail(variables.habitId),
+        serverHabit,
+      );
+      await queryClient.invalidateQueries({ queryKey: habitKeys.lists() });
+    },
   });
 
-  // Starts the optimistic change; successful mutations navigate back afterward.
+  const isHabitMutationPending =
+    markDoneMutation.isPending || dayMutation.isPending;
+  const areDayActionsDisabled =
+    isHabitMutationPending || isForcedFailureArmed;
+
   const handleToggle = (): void => {
-    if (!habit) return;
+    if (!habit || isHabitMutationPending || !submissionGuard.tryStart()) return;
 
-    markDoneMutation.mutate({ id: habit.id, doneToday: !habit.doneToday });
+    const variables: SetHabitDoneInput = {
+      habitId: habit.id,
+      done: !habit.doneToday,
+    };
+    setIsForcedFailureArmed(false);
+    markDoneMutation.mutate(variables, { onSettled: submissionGuard.finish });
   };
 
-  // Sends a day-box change through its mutation and optimistic cache lifecycle.
+  const handleRetry = (): void => {
+    const originalVariables = markDoneMutation.variables;
+    if (
+      !originalVariables ||
+      isHabitMutationPending ||
+      !submissionGuard.tryStart()
+    ) {
+      return;
+    }
+    markDoneMutation.mutate(originalVariables, {
+      onSettled: submissionGuard.finish,
+    });
+  };
+
   const handleDayToggle = (dayIndex: number): void => {
-    if (habit) dayMutation.mutate({ id: habit.id, dayIndex });
+    if (!habit || areDayActionsDisabled) return;
+    dayMutation.mutate({
+      habitId: habit.id,
+      dayIndex,
+      done: !habit.lastSevenDays[dayIndex],
+    });
   };
+
+  const armForcedFailure = (): void => {
+    if (isHabitMutationPending) return;
+    failNextMutation();
+    setIsForcedFailureArmed(true);
+  };
+
+  const pendingButtonText = markDoneMutation.variables?.done
+    ? "Marking as done..."
+    : "Marking as not done...";
 
   return (
     <View style={styles.root}>
@@ -138,7 +184,12 @@ export default function HabitDetailScreen() {
         colors={colors.backgroundGradient}
         style={StyleSheet.absoluteFill}
       />
-      <View style={[styles.content, { paddingTop: insets.top + Spacing.lg }]}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + Spacing.lg },
+        ]}
+      >
         {habit ? (
           <>
             <Text style={[textStyles.heading1, styles.title]}>{habit.name}</Text>
@@ -172,7 +223,7 @@ export default function HabitDetailScreen() {
                     <Pressable
                       key={`${habit.id}-${index}`}
                       onPress={() => handleDayToggle(index)}
-                      disabled={dayMutation.isPending}
+                      disabled={areDayActionsDisabled}
                       style={[
                         styles.dayBox,
                         {
@@ -180,6 +231,7 @@ export default function HabitDetailScreen() {
                             ? colors.success
                             : colors.surfaceElevated,
                           borderColor: done ? colors.success : colors.border,
+                          opacity: areDayActionsDisabled ? 0.6 : 1,
                         },
                       ]}
                       accessible
@@ -187,7 +239,7 @@ export default function HabitDetailScreen() {
                       accessibilityRole="checkbox"
                       accessibilityState={{
                         checked: done,
-                        disabled: dayMutation.isPending,
+                        disabled: areDayActionsDisabled,
                       }}
                       accessibilityLabel={`Day ${index + 1}: ${
                         done ? "completed" : "not completed"
@@ -212,16 +264,80 @@ export default function HabitDetailScreen() {
             </Card>
 
             <AppButton
-              text={habit.doneToday ? "Mark as not done" : "Mark as done"}
+              text={
+                markDoneMutation.isPending
+                  ? pendingButtonText
+                  : habit.doneToday
+                    ? "Mark as not done"
+                    : "Mark as done"
+              }
               variant={habit.doneToday ? "secondary" : "primary"}
               onPress={handleToggle}
               isLoading={markDoneMutation.isPending}
+              isEnabled={!dayMutation.isPending}
             />
+
+            {markDoneMutation.isError && (
+              <View style={styles.mutationMessage}>
+                <Text style={[textStyles.body, { color: colors.error }]}>
+                  We couldn&apos;t update this habit. Your previous state was restored.
+                </Text>
+                <AppButton
+                  text="Retry intended change"
+                  variant="secondary"
+                  onPress={handleRetry}
+                  isLoading={markDoneMutation.isPending}
+                />
+              </View>
+            )}
+
+            {markDoneMutation.isSuccess && (
+              <Text style={[textStyles.caption, { color: colors.success }]}>
+                Habit updated and reconciled with the server.
+              </Text>
+            )}
+
+            {dayMutation.isError && (
+              <Text style={[textStyles.caption, { color: colors.error }]}>
+                We couldn&apos;t update that day. Its previous state was restored.
+              </Text>
+            )}
+
+            {__DEV__ && (
+              <View style={[styles.demoPanel, { borderColor: colors.border }]}>
+                <Text style={textStyles.overline}>PUR-25 forced failure</Text>
+                <Text style={textStyles.caption}>
+                  Next completion mutation: {isForcedFailureArmed ? "will fail" : "normal"}
+                </Text>
+                <Text style={textStyles.caption}>
+                  Last intended command: {markDoneMutation.variables
+                    ? JSON.stringify(markDoneMutation.variables)
+                    : "none"}
+                </Text>
+                <AppButton
+                  text={isForcedFailureArmed ? "Failure armed" : "Fail next mutation"}
+                  variant="secondary"
+                  onPress={armForcedFailure}
+                  isEnabled={!isHabitMutationPending && !isForcedFailureArmed}
+                />
+                {markDoneMutation.isSuccess && (
+                  <AppButton
+                    text="Repeat exact final-state command"
+                    variant="secondary"
+                    onPress={handleRetry}
+                    isEnabled={!isHabitMutationPending}
+                  />
+                )}
+              </View>
+            )}
+
+            <HabitMutationCacheInspector habitId={habit.id} />
 
             <AppButton
               text="Go Back"
               variant="secondary"
               onPress={() => router.back()}
+              isEnabled={!isHabitMutationPending}
             />
           </>
         ) : (
@@ -236,7 +352,7 @@ export default function HabitDetailScreen() {
             )}
           </View>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -244,7 +360,7 @@ export default function HabitDetailScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.xxl * 2,
     gap: Spacing.lg,
@@ -265,5 +381,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  mutationMessage: { gap: Spacing.sm },
+  demoPanel: {
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderRadius: Radius.md,
   },
 });

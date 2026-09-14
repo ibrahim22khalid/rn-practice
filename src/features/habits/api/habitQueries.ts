@@ -1,10 +1,12 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import {
+  fetchHabit,
   isHabitRequestCancellationEnabled,
   normalizeHabitSearchTerm,
   searchHabits,
 } from "./habitsApi";
+import type { Habit } from "../types/habit";
 
 export type HabitListParams = Readonly<{
   searchTerm: string;
@@ -19,7 +21,7 @@ export const habitKeys = {
   list: (params: HabitListParams) =>
     [...habitKeys.lists(), params] as const,
   details: () => [...habitKeys.all, "detail"] as const,
-  detail: (habitId: string) => [...habitKeys.details(), habitId] as const,
+  detail: (habitId: Habit["id"]) => [...habitKeys.details(), habitId] as const,
 };
 
 export const ALL_HABITS_PARAMS: HabitListParams = Object.freeze({
@@ -42,6 +44,15 @@ export function habitListQueryOptions(params: HabitListParams) {
         isHabitRequestCancellationEnabled() ? context.signal : undefined,
       ),
     // A one-shot training failure must remain visible instead of being retried.
+    retry: false,
+    staleTime: HABIT_QUERY_STALE_TIME_MS,
+  });
+}
+
+export function habitDetailQueryOptions(habitId: Habit["id"]) {
+  return queryOptions({
+    queryKey: habitKeys.detail(habitId),
+    queryFn: (context) => fetchHabit(habitId, context.signal),
     retry: false,
     staleTime: HABIT_QUERY_STALE_TIME_MS,
   });

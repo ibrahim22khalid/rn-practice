@@ -29,6 +29,7 @@ import { getTextStyles } from "../../../shared/values/textStyles";
 import { Radius, Spacing } from "../../../shared/values/spacing";
 import {
   failNextQuery,
+  resetFakeHabitsServer,
   SEARCH_RACE_SCENARIO,
   setDevelopmentCancellationEnabled,
 } from "../api/habitsApi";
@@ -141,6 +142,12 @@ export default function HabitListScreen() {
     setDevelopmentCancellationEnabled(nextValue);
     setIsCancellationEnabled(nextValue);
   }, [isCancellationEnabled]);
+
+  const resetMutationDemo = useCallback(async (): Promise<void> => {
+    resetFakeHabitsServer();
+    setIsCancellationEnabled(true);
+    await queryClient.resetQueries({ queryKey: habitKeys.all });
+  }, [queryClient]);
 
   const logCacheEvidence = useCallback((): void => {
     if (!__DEV__) return;
@@ -373,6 +380,11 @@ export default function HabitListScreen() {
                   text="Log search cache evidence"
                   variant="secondary"
                   onPress={logCacheEvidence}
+                />
+                <AppButton
+                  text="Reset fake server for mutation demo"
+                  variant="secondary"
+                  onPress={resetMutationDemo}
                 />
               </View>
             )}

@@ -1,10 +1,17 @@
 import type { Habit } from "../types/habit";
 
 export type AddHabitInput = Pick<Habit, "name" | "frequency">;
-export type MarkHabitDoneInput = Pick<Habit, "id" | "doneToday">;
-export type ToggleHabitDayInput = { id: string; dayIndex: number };
+export type SetHabitDoneInput = Readonly<{
+  habitId: Habit["id"];
+  done: boolean;
+}>;
+export type SetHabitDayDoneInput = Readonly<{
+  habitId: Habit["id"];
+  dayIndex: number;
+  done: boolean;
+}>;
 
-export type FakeApiRequestType = "list" | "search" | "mutation";
+export type FakeApiRequestType = "list" | "detail" | "search" | "mutation";
 export type FakeApiRequestEvent =
   | "started"
   | "completed"
@@ -86,7 +93,8 @@ const HABIT_VARIANTS = [
 const INITIAL_DELAY_CONFIG: FakeApiDelayConfig = {
   defaultMs: 600,
   listMs: 600,
-  mutationMs: 600,
+  // Long enough to inspect the optimistic cache state during training.
+  mutationMs: 1500,
   searchMs: {
     [SEARCH_RACE_SCENARIO.slow.term]: SEARCH_RACE_SCENARIO.slow.delayMs,
     [SEARCH_RACE_SCENARIO.fast.term]: SEARCH_RACE_SCENARIO.fast.delayMs,
@@ -205,7 +213,9 @@ function getDelayMs(
   requestType: FakeApiRequestType,
   searchTerm: string | null,
 ): number {
-  if (requestType === "list") return delayConfig.listMs;
+  if (requestType === "list" || requestType === "detail") {
+    return delayConfig.listMs;
+  }
   if (requestType === "mutation") return delayConfig.mutationMs;
   return searchTerm === null
     ? delayConfig.defaultMs
@@ -366,28 +376,54 @@ export async function searchHabits(
   );
 }
 
-export async function markHabitDone({
-  id,
-  doneToday,
-}: MarkHabitDoneInput): Promise<Habit> {
-  return runRequest("mutation", null, () => {
-    const habit = serverHabits.find((item) => item.id === id);
+export async function fetchHabit(
+  habitId: Habit["id"],
+  signal?: AbortSignal,
+): Promise<Habit> {
+  return runRequest("detail", null, () => {
+    const habit = serverHabits.find((item) => item.id === habitId);
     if (!habit) {
-      throw new FakeApiError("HABIT_NOT_FOUND", `Habit "${id}" was not found`);
+      throw new FakeApiError(
+        "HABIT_NOT_FOUND",
+        `Habit "${habitId}" was not found`,
+      );
     }
 
-    const updatedHabit = { ...habit, doneToday };
+    return copyHabit(habit);
+  }, signal);
+}
+
+export function getFakeServerHabit(habitId: Habit["id"]): Habit | undefined {
+  const habit = serverHabits.find((item) => item.id === habitId);
+  return habit ? copyHabit(habit) : undefined;
+}
+
+export async function setHabitDone({
+  habitId,
+  done,
+}: SetHabitDoneInput): Promise<Habit> {
+  return runRequest("mutation", null, () => {
+    const habit = serverHabits.find((item) => item.id === habitId);
+    if (!habit) {
+      throw new FakeApiError(
+        "HABIT_NOT_FOUND",
+        `Habit "${habitId}" was not found`,
+      );
+    }
+
+    const updatedHabit = { ...habit, doneToday: done };
     serverHabits = serverHabits.map((item) =>
-      item.id === id ? updatedHabit : item,
+      item.id === habitId ? updatedHabit : item,
     );
     return copyHabit(updatedHabit);
   });
 }
 
-export async function toggleHabitDay({
-  id,
+export async function setHabitDayDone({
+  habitId,
   dayIndex,
-}: ToggleHabitDayInput): Promise<Habit> {
+  done,
+}: SetHabitDayDoneInput): Promise<Habit> {
   return runRequest("mutation", null, () => {
     if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex > 6) {
       throw new FakeApiError(
@@ -396,16 +432,21 @@ export async function toggleHabitDay({
       );
     }
 
-    const habit = serverHabits.find((item) => item.id === id);
+    const habit = serverHabits.find((item) => item.id === habitId);
     if (!habit) {
-      throw new FakeApiError("HABIT_NOT_FOUND", `Habit "${id}" was not found`);
+      throw new FakeApiError(
+        "HABIT_NOT_FOUND",
+        `Habit "${habitId}" was not found`,
+      );
     }
 
     const lastSevenDays = [...habit.lastSevenDays];
     const wasDone = lastSevenDays[dayIndex];
-    lastSevenDays[dayIndex] = !wasDone;
+    if (wasDone === done) return copyHabit(habit);
+
+    lastSevenDays[dayIndex] = done;
     const activeDaysCount = lastSevenDays.filter(Boolean).length;
-    const rawStreak = wasDone ? habit.streak - 1 : habit.streak + 1;
+    const rawStreak = done ? habit.streak + 1 : habit.streak - 1;
     const updatedHabit = {
       ...habit,
       lastSevenDays,
@@ -413,7 +454,7 @@ export async function toggleHabitDay({
     };
 
     serverHabits = serverHabits.map((item) =>
-      item.id === id ? updatedHabit : item,
+      item.id === habitId ? updatedHabit : item,
     );
     return copyHabit(updatedHabit);
   });
