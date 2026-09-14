@@ -4,17 +4,32 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
+  TextInput,
 } from "react-native";
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
-import { Spacing } from "../../../shared/values/spacing";
-import { fetchHabits } from "../api/habitsApi";
+import { Radius, Spacing } from "../../../shared/values/spacing";
+import {
+  failNextQuery,
+  SEARCH_RACE_SCENARIO,
+  setDevelopmentCancellationEnabled,
+} from "../api/habitsApi";
+import {
+  createHabitListParams,
+  habitKeys,
+  habitListQueryOptions,
+} from "../api/habitQueries";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Habit } from "../types/habit";
 import HabitCard from "../components/HabitCard";
 import HabitFilter, {
@@ -22,28 +37,87 @@ import HabitFilter, {
 } from "../components/HabitFilter";
 import AppButton from "../../../shared/components/AppButton";
 
+// Short enough to feel responsive, while avoiding a request for every keystroke.
+const SEARCH_DEBOUNCE_MS = 350;
+
 // Displays the shared habits query with local-only filtering and derived counts.
 export default function HabitListScreen() {
   const { colors } = useTheme();
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
-  const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ["habits"],
-    queryFn: ({ signal }) => fetchHabits(signal),
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isCancellationEnabled, setIsCancellationEnabled] = useState(true);
+  const debouncedSearchTerm = useDebouncedValue(
+    searchTerm,
+    SEARCH_DEBOUNCE_MS,
+  );
+  const listParams = useMemo(
+    () => createHabitListParams(debouncedSearchTerm),
+    [debouncedSearchTerm],
+  );
+  const normalizedSearchTerm = listParams.searchTerm;
+  const {
+    data,
+    isPending,
+    isFetching,
+    isError,
+    isPlaceholderData,
+    refetch,
+  } = useQuery({
+    ...habitListQueryOptions(listParams),
+    // TanStack Query v5 keeps usable results visible while the new key loads.
+    placeholderData: keepPreviousData,
   });
   const habits = data ?? [];
   const [filter, setFilter] = useState<FilterOption>("all");
+  const isDebouncing = searchTerm !== debouncedSearchTerm;
+  const isInitialLoading = isPending && data === undefined;
+  const isBackgroundFetching = isFetching && !isInitialLoading;
 
   const filteredHabits = useMemo(() => {
-    if (filter === "done") return habits.filter((h) => h.doneToday);
-    if (filter === "not_done") return habits.filter((h) => !h.doneToday);
+    if (filter === "done") return habits.filter((habit) => habit.doneToday);
+    if (filter === "not_done") {
+      return habits.filter((habit) => !habit.doneToday);
+    }
     return habits;
   }, [habits, filter]);
 
   const doneCount = useMemo(
-    () => habits.filter((h) => h.doneToday).length,
-    [habits]
+    () => habits.filter((habit) => habit.doneToday).length,
+    [habits],
   );
+
+  useEffect(
+    () => () => setDevelopmentCancellationEnabled(true),
+    [],
+  );
+
+  const toggleCancellation = useCallback((): void => {
+    const nextValue = !isCancellationEnabled;
+    setDevelopmentCancellationEnabled(nextValue);
+    setIsCancellationEnabled(nextValue);
+  }, [isCancellationEnabled]);
+
+  const logCacheEvidence = useCallback((): void => {
+    if (!__DEV__) return;
+
+    const slowParams = createHabitListParams(SEARCH_RACE_SCENARIO.slow.term);
+    const fastParams = createHabitListParams(SEARCH_RACE_SCENARIO.fast.term);
+    const slowKey = habitKeys.list(slowParams);
+    const fastKey = habitKeys.list(fastParams);
+    const slowData = queryClient.getQueryData<Habit[]>(slowKey);
+    const fastData = queryClient.getQueryData<Habit[]>(fastKey);
+
+    console.debug("Habit query cache evidence", {
+      currentTerm: listParams.searchTerm,
+      currentKey: habitKeys.list(listParams),
+      visibleResultCount: habits.length,
+      showingPlaceholderData: isPlaceholderData,
+      slow: { key: slowKey, cachedResultCount: slowData?.length ?? 0 },
+      fast: { key: fastKey, cachedResultCount: fastData?.length ?? 0 },
+    });
+  }, [habits.length, isPlaceholderData, listParams, queryClient]);
 
   const renderItem = useCallback(
     ({ item }: { item: Habit }) => (
@@ -55,7 +129,7 @@ export default function HabitListScreen() {
     []
   );
 
-  if (isPending) {
+  if (isInitialLoading) {
     return (
       <View style={styles.root}>
         <LinearGradient
@@ -74,7 +148,7 @@ export default function HabitListScreen() {
     );
   }
 
-  if (isError) {
+  if (isError && data === undefined) {
     return (
       <View style={styles.root}>
         <LinearGradient
@@ -119,10 +193,83 @@ export default function HabitListScreen() {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text style={[textStyles.heading1, styles.title]}>Habits</Text>
+            <View style={styles.searchRow}>
+              <TextInput
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+                placeholder='Search habits (try "heart", then "healing")'
+                placeholderTextColor={colors.textDisabled}
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+                accessibilityLabel="Search habits"
+                style={[
+                  styles.searchInput,
+                  {
+                    color: colors.textPrimary,
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: isError ? colors.error : colors.border,
+                  },
+                ]}
+              />
+              {isBackgroundFetching && (
+                <ActivityIndicator
+                  accessibilityLabel="Updating habit results"
+                  color={colors.primary}
+                />
+              )}
+            </View>
+            {isDebouncing && (
+              <Text style={[textStyles.caption, { color: colors.textSecondary }]}>
+                Waiting to search...
+              </Text>
+            )}
+            {isBackgroundFetching && (
+              <Text style={[textStyles.caption, { color: colors.textSecondary }]}>
+                Updating results...
+                {isPlaceholderData ? " Showing previous results." : ""}
+              </Text>
+            )}
+            {isError && (
+              <View style={styles.searchErrorRow}>
+                <Text style={[textStyles.caption, { color: colors.error }]}>
+                  Could not update results
+                </Text>
+                <AppButton
+                  text="Retry"
+                  variant="secondary"
+                  isExpanded={false}
+                  onPress={() => refetch()}
+                />
+              </View>
+            )}
             <HabitFilter selected={filter} onChange={setFilter} />
             <Text style={[textStyles.caption, styles.count]}>
               {doneCount} of {habits.length} done today
             </Text>
+            {__DEV__ && (
+              <View style={[styles.demoPanel, { borderColor: colors.border }]}>
+                <Text style={textStyles.caption}>
+                  Demo: "heart" {SEARCH_RACE_SCENARIO.slow.delayMs}ms then
+                  "healing" {SEARCH_RACE_SCENARIO.fast.delayMs}ms
+                </Text>
+                <AppButton
+                  text={`Cancellation: ${isCancellationEnabled ? "on" : "off"}`}
+                  variant="secondary"
+                  onPress={toggleCancellation}
+                />
+                <AppButton
+                  text="Fail next query"
+                  variant="secondary"
+                  onPress={failNextQuery}
+                />
+                <AppButton
+                  text="Log search cache evidence"
+                  variant="secondary"
+                  onPress={logCacheEvidence}
+                />
+              </View>
+            )}
             <AppButton
               text="Add Habit"
               variant="secondary"
@@ -134,17 +281,11 @@ export default function HabitListScreen() {
           <View style={[styles.empty, { gap: Spacing.md }]}>
             <Text style={[textStyles.body, { color: colors.textSecondary }]}>
               {habits.length === 0
-                ? "No habits yet"
+                ? normalizedSearchTerm
+                  ? `No habits match "${normalizedSearchTerm}"`
+                  : "No habits yet"
                 : "No habits match this filter"}
             </Text>
-            <View style={styles.retryButton}>
-              <AppButton
-                text="Retry"
-                variant="secondary"
-                isExpanded={false}
-                onPress={() => refetch()}
-              />
-            </View>
           </View>
         }
         ListFooterComponent={
@@ -183,6 +324,31 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: Spacing.xs,
+  },
+  searchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    fontSize: 15,
+  },
+  searchErrorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.sm,
+  },
+  demoPanel: {
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderRadius: Radius.md,
   },
   count: {
     marginTop: Spacing.xs,

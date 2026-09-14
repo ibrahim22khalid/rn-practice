@@ -8,10 +8,14 @@ import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
 import { Spacing, Radius } from "../../../shared/values/spacing";
 import {
-  fetchHabits,
   markHabitDone,
   toggleHabitDay,
 } from "../api/habitsApi";
+import {
+  ALL_HABITS_PARAMS,
+  habitKeys,
+  habitListQueryOptions,
+} from "../api/habitQueries";
 import { Habit } from "../types/habit";
 import Card from "../../../shared/components/Card";
 import Badge from "../../../shared/components/Badge";
@@ -26,10 +30,9 @@ export default function HabitDetailScreen() {
   const textStyles = getTextStyles(colors);
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
-  const { data: habits = [], isPending, isError, refetch } = useQuery({
-    queryKey: ["habits"],
-    queryFn: ({ signal }) => fetchHabits(signal),
-  });
+  const { data: habits = [], isPending, isError, refetch } = useQuery(
+    habitListQueryOptions(ALL_HABITS_PARAMS),
+  );
   const habit = habits.find((item) => item.id === id);
 
   const markDoneMutation = useMutation<
@@ -40,26 +43,34 @@ export default function HabitDetailScreen() {
   >({
     mutationFn: markHabitDone,
     onMutate: async (updatedHabit) => {
-      await queryClient.cancelQueries({ queryKey: ["habits"] });
-      const previousHabits = queryClient.getQueryData<Habit[]>(["habits"]);
+      await queryClient.cancelQueries({ queryKey: habitKeys.lists() });
+      const previousHabits = queryClient.getQueryData<Habit[]>(
+        habitKeys.list(ALL_HABITS_PARAMS),
+      );
 
-      queryClient.setQueryData<Habit[]>(["habits"], (current = []) =>
-        current.map((item) =>
-          item.id === updatedHabit.id
-            ? { ...item, doneToday: updatedHabit.doneToday }
-            : item,
-        ),
+      queryClient.setQueryData<Habit[]>(
+        habitKeys.list(ALL_HABITS_PARAMS),
+        (current = []) =>
+          current.map((item) =>
+            item.id === updatedHabit.id
+              ? { ...item, doneToday: updatedHabit.doneToday }
+              : item,
+          ),
       );
 
       return { previousHabits };
     },
     onError: (_error, _updatedHabit, context) => {
       if (context?.previousHabits) {
-        queryClient.setQueryData(["habits"], context.previousHabits);
+        queryClient.setQueryData(
+          habitKeys.list(ALL_HABITS_PARAMS),
+          context.previousHabits,
+        );
       }
     },
     onSuccess: () => router.back(),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: habitKeys.lists() }),
   });
 
   const dayMutation = useMutation<
@@ -70,35 +81,43 @@ export default function HabitDetailScreen() {
   >({
     mutationFn: toggleHabitDay,
     onMutate: async ({ id: habitId, dayIndex }) => {
-      await queryClient.cancelQueries({ queryKey: ["habits"] });
-      const previousHabits = queryClient.getQueryData<Habit[]>(["habits"]);
+      await queryClient.cancelQueries({ queryKey: habitKeys.lists() });
+      const previousHabits = queryClient.getQueryData<Habit[]>(
+        habitKeys.list(ALL_HABITS_PARAMS),
+      );
 
-      queryClient.setQueryData<Habit[]>(["habits"], (current = []) =>
-        current.map((item) => {
-          if (item.id !== habitId) return item;
+      queryClient.setQueryData<Habit[]>(
+        habitKeys.list(ALL_HABITS_PARAMS),
+        (current = []) =>
+          current.map((item) => {
+            if (item.id !== habitId) return item;
 
-          const lastSevenDays = [...item.lastSevenDays];
-          const wasDone = lastSevenDays[dayIndex];
-          lastSevenDays[dayIndex] = !wasDone;
-          const activeDaysCount = lastSevenDays.filter(Boolean).length;
-          const rawStreak = wasDone ? item.streak - 1 : item.streak + 1;
+            const lastSevenDays = [...item.lastSevenDays];
+            const wasDone = lastSevenDays[dayIndex];
+            lastSevenDays[dayIndex] = !wasDone;
+            const activeDaysCount = lastSevenDays.filter(Boolean).length;
+            const rawStreak = wasDone ? item.streak - 1 : item.streak + 1;
 
-          return {
-            ...item,
-            lastSevenDays,
-            streak: Math.max(rawStreak, activeDaysCount, 0),
-          };
-        }),
+            return {
+              ...item,
+              lastSevenDays,
+              streak: Math.max(rawStreak, activeDaysCount, 0),
+            };
+          }),
       );
 
       return { previousHabits };
     },
     onError: (_error, _variables, context) => {
       if (context?.previousHabits) {
-        queryClient.setQueryData(["habits"], context.previousHabits);
+        queryClient.setQueryData(
+          habitKeys.list(ALL_HABITS_PARAMS),
+          context.previousHabits,
+        );
       }
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["habits"] }),
+    onSettled: () =>
+      queryClient.invalidateQueries({ queryKey: habitKeys.lists() }),
   });
 
   // Starts the optimistic change; successful mutations navigate back afterward.

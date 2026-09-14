@@ -100,6 +100,7 @@ let shouldFailNextMutation = false;
 let delayConfig = copyDelayConfig(INITIAL_DELAY_CONFIG);
 let nextRequestId = 1;
 let requestLog: FakeApiRequestLogEntry[] = [];
+let isDevelopmentCancellationEnabled = true;
 
 function generateHabits(): Habit[] {
   return HABIT_THEMES.flatMap((theme, themeIndex) =>
@@ -134,7 +135,7 @@ function copyDelayConfig(config: FakeApiDelayConfig): FakeApiDelayConfig {
   return { ...config, searchMs: { ...config.searchMs } };
 }
 
-function normalizeSearchTerm(term: string): string {
+export function normalizeHabitSearchTerm(term: string): string {
   return term.trim().toLowerCase();
 }
 
@@ -236,12 +237,14 @@ async function runRequest<T>(
   signal?: AbortSignal,
 ): Promise<T> {
   const requestId = nextRequestId;
+  const requestSignal =
+    __DEV__ && !isDevelopmentCancellationEnabled ? undefined : signal;
   nextRequestId += 1;
   logRequest(requestId, requestType, searchTerm, "started");
 
   try {
-    await waitForDelay(getDelayMs(requestType, searchTerm), signal);
-    if (signal?.aborted) throw createAbortError();
+    await waitForDelay(getDelayMs(requestType, searchTerm), requestSignal);
+    if (requestSignal?.aborted) throw createAbortError();
     consumeForcedFailure(requestType);
     const result = operation();
     logRequest(requestId, requestType, searchTerm, "completed");
@@ -272,7 +275,7 @@ export function configureFakeApiDelays(
   const searchMs = Object.fromEntries(
     Object.entries(configuredSearchMs).map(([term, delayMs]) => {
       assertValidDelay(delayMs, `search delay for "${term}"`);
-      return [normalizeSearchTerm(term), delayMs];
+      return [normalizeHabitSearchTerm(term), delayMs];
     }),
   );
 
@@ -301,6 +304,16 @@ export function failNextMutation(): void {
   shouldFailNextMutation = true;
 }
 
+// Training-only switch used to prove key correctness separately from aborting.
+// Production requests always consume the supplied signal.
+export function setDevelopmentCancellationEnabled(value: boolean): void {
+  if (__DEV__) isDevelopmentCancellationEnabled = value;
+}
+
+export function isHabitRequestCancellationEnabled(): boolean {
+  return !__DEV__ || isDevelopmentCancellationEnabled;
+}
+
 // Compatibility controls retained for the existing training screens and demos.
 export function setShouldFail(value: boolean): void {
   shouldFailNextQuery = value;
@@ -325,6 +338,7 @@ export function resetFakeHabitsServer(): void {
   shouldFailNextMutation = false;
   delayConfig = copyDelayConfig(INITIAL_DELAY_CONFIG);
   nextRequestId = 1;
+  isDevelopmentCancellationEnabled = true;
   clearFakeApiRequestLog();
 }
 
@@ -338,7 +352,7 @@ export async function searchHabits(
   term: string,
   signal?: AbortSignal,
 ): Promise<Habit[]> {
-  const normalizedTerm = normalizeSearchTerm(term);
+  const normalizedTerm = normalizeHabitSearchTerm(term);
   return runRequest(
     "search",
     normalizedTerm,

@@ -19,6 +19,7 @@ import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
 import { Spacing, Radius } from "../../../shared/values/spacing";
 import { addHabit } from "../api/habitsApi";
+import { ALL_HABITS_PARAMS, habitKeys } from "../api/habitQueries";
 import type { Habit } from "../types/habit";
 import SegmentedTabs from "../../../shared/components/SegmentedTabs";
 import AppButton from "../../../shared/components/AppButton";
@@ -37,7 +38,7 @@ export default function AddHabitScreen() {
   const addHabitMutation = useMutation({
     mutationFn: addHabit,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["habits"] });
+      await queryClient.invalidateQueries({ queryKey: habitKeys.lists() });
       Keyboard.dismiss();
       router.back();
     },
@@ -50,7 +51,10 @@ export default function AddHabitScreen() {
 
   // Runs the existing validation before starting the add-habit mutation.
   const handleSave = (): void => {
-    const habits = queryClient.getQueryData<Habit[]>(["habits"]) ?? [];
+    const habits =
+      queryClient.getQueryData<Habit[]>(
+        habitKeys.list(ALL_HABITS_PARAMS),
+      ) ?? [];
     const validationError = validateString(name, [
       (value) => required(value, "Name"),
       (value) => noDuplicates(value, habits.map((h) => h.name), "Habit"),
