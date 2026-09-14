@@ -6,12 +6,20 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import {
   keepPreviousData,
+  focusManager,
+  onlineManager,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -26,12 +34,14 @@ import {
 } from "../api/habitsApi";
 import {
   createHabitListParams,
+  HABIT_QUERY_STALE_TIME_MS,
   habitKeys,
   habitListQueryOptions,
 } from "../api/habitQueries";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { Habit } from "../types/habit";
 import HabitCard from "../components/HabitCard";
+import HabitQueryStatusPanel from "../components/HabitQueryStatusPanel";
 import HabitFilter, {
   FilterOption,
 } from "../components/HabitFilter";
@@ -39,6 +49,22 @@ import AppButton from "../../../shared/components/AppButton";
 
 // Short enough to feel responsive, while avoiding a request for every keystroke.
 const SEARCH_DEBOUNCE_MS = 350;
+
+function subscribeToOnlineManager(onStoreChange: () => void): () => void {
+  return onlineManager.subscribe(onStoreChange);
+}
+
+function getOnlineManagerSnapshot(): boolean {
+  return onlineManager.isOnline();
+}
+
+function subscribeToFocusManager(onStoreChange: () => void): () => void {
+  return focusManager.subscribe(onStoreChange);
+}
+
+function getFocusManagerSnapshot(): boolean {
+  return focusManager.isFocused();
+}
 
 // Displays the shared habits query with local-only filtering and derived counts.
 export default function HabitListScreen() {
@@ -60,20 +86,37 @@ export default function HabitListScreen() {
   const {
     data,
     isPending,
-    isFetching,
     isError,
     isPlaceholderData,
+    status,
+    fetchStatus,
+    dataUpdatedAt,
     refetch,
   } = useQuery({
     ...habitListQueryOptions(listParams),
     // TanStack Query v5 keeps usable results visible while the new key loads.
-    placeholderData: keepPreviousData,
+    placeholderData: onlineManager.isOnline() ? keepPreviousData : undefined,
   });
   const habits = data ?? [];
   const [filter, setFilter] = useState<FilterOption>("all");
+  const isOnline = useSyncExternalStore(
+    subscribeToOnlineManager,
+    getOnlineManagerSnapshot,
+    () => true,
+  );
+  const isFocused = useSyncExternalStore(
+    subscribeToFocusManager,
+    getFocusManagerSnapshot,
+    () => true,
+  );
   const isDebouncing = searchTerm !== debouncedSearchTerm;
-  const isInitialLoading = isPending && data === undefined;
-  const isBackgroundFetching = isFetching && !isInitialLoading;
+  const isPaused = fetchStatus === "paused";
+  const isPausedWithoutData = isPaused && data === undefined;
+  const isPausedWithData = isPaused && data !== undefined;
+  const isInitialLoading =
+    isPending && data === undefined && fetchStatus === "fetching";
+  const isBackgroundFetching =
+    fetchStatus === "fetching" && data !== undefined;
 
   const filteredHabits = useMemo(() => {
     if (filter === "done") return habits.filter((habit) => habit.doneToday);
@@ -129,6 +172,37 @@ export default function HabitListScreen() {
     []
   );
 
+  if (isPausedWithoutData) {
+    return (
+      <View style={styles.root}>
+        <LinearGradient
+          colors={colors.backgroundGradient}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={[
+            styles.centered,
+            styles.padded,
+            { paddingTop: insets.top + Spacing.lg, gap: Spacing.md },
+          ]}
+        >
+          <Text style={textStyles.heading2}>Waiting for a network connection...</Text>
+          <Text style={[textStyles.body, { color: colors.textSecondary }]}>
+            This query will start automatically when the device reconnects.
+          </Text>
+          <HabitQueryStatusPanel
+            status={status}
+            fetchStatus={fetchStatus}
+            searchTerm={normalizedSearchTerm}
+            isOnline={isOnline}
+            isFocused={isFocused}
+            dataUpdatedAt={dataUpdatedAt}
+          />
+        </View>
+      </View>
+    );
+  }
+
   if (isInitialLoading) {
     return (
       <View style={styles.root}>
@@ -143,6 +217,14 @@ export default function HabitListScreen() {
           ]}
         >
           <ActivityIndicator size="large" color={colors.primary} />
+          <HabitQueryStatusPanel
+            status={status}
+            fetchStatus={fetchStatus}
+            searchTerm={normalizedSearchTerm}
+            isOnline={isOnline}
+            isFocused={isFocused}
+            dataUpdatedAt={dataUpdatedAt}
+          />
         </View>
       </View>
     );
@@ -163,6 +245,14 @@ export default function HabitListScreen() {
           ]}
         >
           <Text style={textStyles.heading2}>Something went wrong</Text>
+          <HabitQueryStatusPanel
+            status={status}
+            fetchStatus={fetchStatus}
+            searchTerm={normalizedSearchTerm}
+            isOnline={isOnline}
+            isFocused={isFocused}
+            dataUpdatedAt={dataUpdatedAt}
+          />
           <View style={styles.retryButton}>
             <AppButton
               text="Retry"
@@ -230,6 +320,11 @@ export default function HabitListScreen() {
                 {isPlaceholderData ? " Showing previous results." : ""}
               </Text>
             )}
+            {isPausedWithData && (
+              <Text style={[textStyles.caption, { color: colors.textSecondary }]}>
+                Offline - the update will continue when the connection returns.
+              </Text>
+            )}
             {isError && (
               <View style={styles.searchErrorRow}>
                 <Text style={[textStyles.caption, { color: colors.error }]}>
@@ -247,11 +342,22 @@ export default function HabitListScreen() {
             <Text style={[textStyles.caption, styles.count]}>
               {doneCount} of {habits.length} done today
             </Text>
+            <HabitQueryStatusPanel
+              status={status}
+              fetchStatus={fetchStatus}
+              searchTerm={normalizedSearchTerm}
+              isOnline={isOnline}
+              isFocused={isFocused}
+              dataUpdatedAt={dataUpdatedAt}
+            />
             {__DEV__ && (
               <View style={[styles.demoPanel, { borderColor: colors.border }]}>
                 <Text style={textStyles.caption}>
                   Demo: "heart" {SEARCH_RACE_SCENARIO.slow.delayMs}ms then
                   "healing" {SEARCH_RACE_SCENARIO.fast.delayMs}ms
+                </Text>
+                <Text style={textStyles.caption}>
+                  Focus stale time: {HABIT_QUERY_STALE_TIME_MS}ms
                 </Text>
                 <AppButton
                   text={`Cancellation: ${isCancellationEnabled ? "on" : "off"}`}

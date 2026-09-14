@@ -10,6 +10,9 @@ export type HabitListParams = Readonly<{
   searchTerm: string;
 }>;
 
+// Five seconds makes fresh/stale focus behavior reproducible in training.
+export const HABIT_QUERY_STALE_TIME_MS = 5000;
+
 export const habitKeys = {
   all: ["habits"] as const,
   lists: () => [...habitKeys.all, "list"] as const,
@@ -40,5 +43,6 @@ export function habitListQueryOptions(params: HabitListParams) {
       ),
     // A one-shot training failure must remain visible instead of being retried.
     retry: false,
+    staleTime: HABIT_QUERY_STALE_TIME_MS,
   });
 }
