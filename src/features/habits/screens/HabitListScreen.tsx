@@ -29,7 +29,7 @@ export default function HabitListScreen() {
   const insets = useSafeAreaInsets();
   const { data, isPending, isError, refetch } = useQuery({
     queryKey: ["habits"],
-    queryFn: fetchHabits,
+    queryFn: ({ signal }) => fetchHabits(signal),
   });
   const habits = data ?? [];
   const [filter, setFilter] = useState<FilterOption>("all");

@@ -28,7 +28,7 @@ export default function HabitDetailScreen() {
   const queryClient = useQueryClient();
   const { data: habits = [], isPending, isError, refetch } = useQuery({
     queryKey: ["habits"],
-    queryFn: fetchHabits,
+    queryFn: ({ signal }) => fetchHabits(signal),
   });
   const habit = habits.find((item) => item.id === id);
 
