@@ -36,6 +36,7 @@ export type FakeApiErrorCode =
   | "ABORTED"
   | "QUERY_FAILED"
   | "MUTATION_FAILED"
+  | "MUTATION_RESPONSE_LOST"
   | "HABIT_NOT_FOUND"
   | "INVALID_DAY_INDEX";
 
@@ -45,7 +46,12 @@ export class FakeApiError extends Error {
   // Preserves a machine-readable error code while exposing standard Error behavior.
   constructor(code: FakeApiErrorCode, message: string) {
     super(message);
-    this.name = code === "ABORTED" ? "AbortError" : "FakeApiError";
+    this.name =
+      code === "ABORTED"
+        ? "AbortError"
+        : code === "MUTATION_RESPONSE_LOST"
+          ? "NetworkError"
+          : "FakeApiError";
     this.code = code;
   }
 }
@@ -106,6 +112,7 @@ let serverHabits = generateHabits();
 let nextHabitNumber = serverHabits.length + 1;
 let shouldFailNextQuery = false;
 let shouldFailNextMutation = false;
+let shouldLoseNextMutationResponse = false;
 let delayConfig = copyDelayConfig(INITIAL_DELAY_CONFIG);
 let nextRequestId = 1;
 let requestLog: FakeApiRequestLogEntry[] = [];
@@ -331,7 +338,16 @@ export function failNextQuery(): void {
 
 // Arms the next mutation request to fail once.
 export function failNextMutation(): void {
+  shouldLoseNextMutationResponse = false;
   shouldFailNextMutation = true;
+}
+
+// Arms a development-only network error after the next completion command is stored.
+export function loseNextMutationResponse(): void {
+  if (!__DEV__) return;
+
+  shouldFailNextMutation = false;
+  shouldLoseNextMutationResponse = true;
 }
 
 // Training-only switch used to prove key correctness separately from aborting.
@@ -372,6 +388,7 @@ export function resetFakeHabitsServer(): void {
   nextHabitNumber = serverHabits.length + 1;
   shouldFailNextQuery = false;
   shouldFailNextMutation = false;
+  shouldLoseNextMutationResponse = false;
   delayConfig = copyDelayConfig(INITIAL_DELAY_CONFIG);
   nextRequestId = 1;
   isDevelopmentCancellationEnabled = true;
@@ -445,6 +462,16 @@ export async function setHabitDone({
     serverHabits = serverHabits.map((item) =>
       item.id === habitId ? updatedHabit : item,
     );
+
+    // Simulate an uncertain network outcome after the server commits the command.
+    if (__DEV__ && shouldLoseNextMutationResponse) {
+      shouldLoseNextMutationResponse = false;
+      throw new FakeApiError(
+        "MUTATION_RESPONSE_LOST",
+        "The habit was saved, but the mutation response was lost",
+      );
+    }
+
     return copyHabit(updatedHabit);
   });
 }

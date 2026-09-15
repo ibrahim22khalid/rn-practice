@@ -52,7 +52,7 @@ export default function HabitMutationCacheInspector({
         },
       ]}
     >
-      <Text style={textStyles.overline}>PUR-25 mutation cache inspector</Text>
+      <Text style={textStyles.overline}>Mutation cache inspector</Text>
       <Text style={textStyles.caption}>target: {habitId}</Text>
       {listEntries.length === 0 ? (
         <Text style={[textStyles.caption, { color: colors.error }]}>
@@ -77,7 +77,7 @@ export default function HabitMutationCacheInspector({
       <AppButton
         text="Log mutation cache evidence"
         variant="secondary"
-        onPress={() => console.debug("PUR-25 cache evidence", evidence)}
+        onPress={() => console.debug("Mutation cache evidence", evidence)}
       />
     </View>
   );

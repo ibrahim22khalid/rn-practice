@@ -15,7 +15,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "../../../shared/theme/ThemeContext";
 import { getTextStyles } from "../../../shared/values/textStyles";
 import { Radius, Spacing } from "../../../shared/values/spacing";
-import { failNextMutation, setHabitDayDone } from "../api/habitsApi";
+import {
+  failNextMutation,
+  FakeApiError,
+  loseNextMutationResponse,
+  setHabitDayDone,
+} from "../api/habitsApi";
 import type {
   SetHabitDayDoneInput,
   SetHabitDoneInput,
@@ -66,10 +71,12 @@ export default function HabitDetailScreen() {
   const queryClient = useQueryClient();
   const submissionGuard = useRef(createMutationSubmissionGuard()).current;
   const [isForcedFailureArmed, setIsForcedFailureArmed] = useState(false);
+  const [isLostResponseArmed, setIsLostResponseArmed] = useState(false);
   const {
     data: habit,
     isPending,
     isError,
+    isFetching: isDetailFetching,
     refetch,
   } = useQuery(habitDetailQueryOptions(id));
 
@@ -135,8 +142,18 @@ export default function HabitDetailScreen() {
 
   const isHabitMutationPending =
     markDoneMutation.isPending || dayMutation.isPending;
+  const isMutationFailureDemoArmed =
+    isForcedFailureArmed || isLostResponseArmed;
   const areDayActionsDisabled =
-    isHabitMutationPending || isForcedFailureArmed;
+    isHabitMutationPending || isMutationFailureDemoArmed;
+  const didLoseMutationResponse =
+    markDoneMutation.error instanceof FakeApiError &&
+    markDoneMutation.error.code === "MUTATION_RESPONSE_LOST";
+  const nextMutationBehavior = isForcedFailureArmed
+    ? "fail before the server write"
+    : isLostResponseArmed
+      ? "save successfully, then lose the response"
+      : "normal";
 
   // Submits the opposite explicit completion value while blocking duplicate taps.
   const handleToggle = (): void => {
@@ -147,6 +164,7 @@ export default function HabitDetailScreen() {
       done: !habit.doneToday,
     };
     setIsForcedFailureArmed(false);
+    setIsLostResponseArmed(false);
     markDoneMutation.mutate(variables, { onSettled: submissionGuard.finish });
   };
 
@@ -177,9 +195,22 @@ export default function HabitDetailScreen() {
 
   // Configures the fake API so the next completion mutation demonstrates rollback.
   const armForcedFailure = (): void => {
-    if (isHabitMutationPending) return;
+    if (isHabitMutationPending || isMutationFailureDemoArmed) return;
     failNextMutation();
     setIsForcedFailureArmed(true);
+  };
+
+  // Arms an uncertain outcome where the server saves before its response is lost.
+  const armLostMutationResponse = (): void => {
+    if (isHabitMutationPending || isMutationFailureDemoArmed) return;
+    loseNextMutationResponse();
+    setIsLostResponseArmed(true);
+  };
+
+  // Refetches the authoritative detail after an uncertain mutation outcome.
+  const handleDetailReconciliation = (): void => {
+    if (isHabitMutationPending || isDetailFetching) return;
+    void refetch();
   };
 
   const pendingButtonText = markDoneMutation.variables?.done
@@ -288,8 +319,19 @@ export default function HabitDetailScreen() {
             {markDoneMutation.isError && (
               <View style={styles.mutationMessage}>
                 <Text style={[textStyles.body, { color: colors.error }]}>
-                  We couldn&apos;t update this habit. Your previous state was restored.
+                  {didLoseMutationResponse
+                    ? "The server response was lost. Your local cache was rolled back, so refetch to learn the server's final state."
+                    : "We couldn't update this habit. Your previous state was restored."}
                 </Text>
+                {__DEV__ && didLoseMutationResponse && (
+                  <AppButton
+                    text="Refetch detail from fake server"
+                    variant="secondary"
+                    onPress={handleDetailReconciliation}
+                    isLoading={isDetailFetching}
+                    isEnabled={!isHabitMutationPending}
+                  />
+                )}
                 <AppButton
                   text="Retry intended change"
                   variant="secondary"
@@ -313,9 +355,9 @@ export default function HabitDetailScreen() {
 
             {__DEV__ && (
               <View style={[styles.demoPanel, { borderColor: colors.border }]}>
-                <Text style={textStyles.overline}>PUR-25 forced failure</Text>
+                <Text style={textStyles.overline}>Mutation failure lab</Text>
                 <Text style={textStyles.caption}>
-                  Next completion mutation: {isForcedFailureArmed ? "will fail" : "normal"}
+                  Next completion mutation: {nextMutationBehavior}
                 </Text>
                 <Text style={textStyles.caption}>
                   Last intended command: {markDoneMutation.variables
@@ -326,7 +368,21 @@ export default function HabitDetailScreen() {
                   text={isForcedFailureArmed ? "Failure armed" : "Fail next mutation"}
                   variant="secondary"
                   onPress={armForcedFailure}
-                  isEnabled={!isHabitMutationPending && !isForcedFailureArmed}
+                  isEnabled={
+                    !isHabitMutationPending && !isMutationFailureDemoArmed
+                  }
+                />
+                <AppButton
+                  text={
+                    isLostResponseArmed
+                      ? "Lost response armed"
+                      : "Lose next mutation response"
+                  }
+                  variant="secondary"
+                  onPress={armLostMutationResponse}
+                  isEnabled={
+                    !isHabitMutationPending && !isMutationFailureDemoArmed
+                  }
                 />
                 {markDoneMutation.isSuccess && (
                   <AppButton
