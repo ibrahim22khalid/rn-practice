@@ -37,11 +37,13 @@ export default function AddHabitScreen() {
   const queryClient = useQueryClient();
   const addHabitMutation = useMutation({
     mutationFn: addHabit,
+    // Refreshes habit lists and returns to the previous route after a successful save.
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: habitKeys.lists() });
       Keyboard.dismiss();
       router.back();
     },
+    // Keeps the form open and presents a retry-friendly message on failure.
     onError: () => setError("Could not add habit. Please try again."),
   });
 

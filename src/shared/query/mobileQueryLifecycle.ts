@@ -4,6 +4,7 @@ import { focusManager, onlineManager } from "@tanstack/react-query";
 
 import { setupQueryLifecycle } from "./queryLifecycleCore";
 
+// Adapts Expo Network and React Native AppState APIs to the shared lifecycle core.
 export function setupMobileQueryLifecycle(): () => void {
   const cleanup = setupQueryLifecycle({
     isWeb: Platform.OS === "web",

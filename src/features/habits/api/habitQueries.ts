@@ -15,6 +15,7 @@ export type HabitListParams = Readonly<{
 // Five seconds makes fresh/stale focus behavior reproducible in training.
 export const HABIT_QUERY_STALE_TIME_MS = 5000;
 
+// Centralizes hierarchical cache-key factories for broad or exact cache operations.
 export const habitKeys = {
   all: ["habits"] as const,
   lists: () => [...habitKeys.all, "list"] as const,
@@ -28,12 +29,14 @@ export const ALL_HABITS_PARAMS: HabitListParams = Object.freeze({
   searchTerm: "",
 });
 
+// Normalizes raw search input so equivalent searches share the same cache key.
 export function createHabitListParams(rawSearchTerm: string): HabitListParams {
   return Object.freeze({
     searchTerm: normalizeHabitSearchTerm(rawSearchTerm),
   });
 }
 
+// Builds the reusable TanStack Query configuration for habit list searches.
 export function habitListQueryOptions(params: HabitListParams) {
   return queryOptions({
     queryKey: habitKeys.list(params),
@@ -49,6 +52,7 @@ export function habitListQueryOptions(params: HabitListParams) {
   });
 }
 
+// Builds the reusable TanStack Query configuration for one habit detail request.
 export function habitDetailQueryOptions(habitId: Habit["id"]) {
   return queryOptions({
     queryKey: habitKeys.detail(habitId),

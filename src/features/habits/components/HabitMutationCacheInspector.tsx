@@ -13,6 +13,7 @@ type HabitMutationCacheInspectorProps = Readonly<{
   habitId: Habit["id"];
 }>;
 
+// Displays development-only evidence comparing list, detail, and fake-server state.
 export default function HabitMutationCacheInspector({
   habitId,
 }: HabitMutationCacheInspectorProps) {

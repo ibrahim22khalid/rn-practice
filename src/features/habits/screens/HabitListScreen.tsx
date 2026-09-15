@@ -51,18 +51,22 @@ import AppButton from "../../../shared/components/AppButton";
 // Short enough to feel responsive, while avoiding a request for every keystroke.
 const SEARCH_DEBOUNCE_MS = 350;
 
+// Subscribes React to TanStack Query's global online-state changes.
 function subscribeToOnlineManager(onStoreChange: () => void): () => void {
   return onlineManager.subscribe(onStoreChange);
 }
 
+// Reads the current online state for useSyncExternalStore.
 function getOnlineManagerSnapshot(): boolean {
   return onlineManager.isOnline();
 }
 
+// Subscribes React to TanStack Query's global focus-state changes.
 function subscribeToFocusManager(onStoreChange: () => void): () => void {
   return focusManager.subscribe(onStoreChange);
 }
 
+// Reads the current focus state for useSyncExternalStore.
 function getFocusManagerSnapshot(): boolean {
   return focusManager.isFocused();
 }
@@ -119,6 +123,7 @@ export default function HabitListScreen() {
   const isBackgroundFetching =
     fetchStatus === "fetching" && data !== undefined;
 
+  // Derives the visible rows locally without creating extra server cache variants.
   const filteredHabits = useMemo(() => {
     if (filter === "done") return habits.filter((habit) => habit.doneToday);
     if (filter === "not_done") {
@@ -127,28 +132,33 @@ export default function HabitListScreen() {
     return habits;
   }, [habits, filter]);
 
+  // Counts completed habits from the unfiltered server result.
   const doneCount = useMemo(
     () => habits.filter((habit) => habit.doneToday).length,
     [habits],
   );
 
+  // Restores normal cancellation behavior when the training screen unmounts.
   useEffect(
     () => () => setDevelopmentCancellationEnabled(true),
     [],
   );
 
+  // Toggles whether search requests honor cancellation during race-condition demos.
   const toggleCancellation = useCallback((): void => {
     const nextValue = !isCancellationEnabled;
     setDevelopmentCancellationEnabled(nextValue);
     setIsCancellationEnabled(nextValue);
   }, [isCancellationEnabled]);
 
+  // Resets fake server data and every habit query to a clean demonstration state.
   const resetMutationDemo = useCallback(async (): Promise<void> => {
     resetFakeHabitsServer();
     setIsCancellationEnabled(true);
     await queryClient.resetQueries({ queryKey: habitKeys.all });
   }, [queryClient]);
 
+  // Prints cache entries for the predefined slow and fast searches for inspection.
   const logCacheEvidence = useCallback((): void => {
     if (!__DEV__) return;
 
@@ -169,6 +179,7 @@ export default function HabitListScreen() {
     });
   }, [habits.length, isPlaceholderData, listParams, queryClient]);
 
+  // Renders each list row and navigates to the selected habit's detail route.
   const renderItem = useCallback(
     ({ item }: { item: Habit }) => (
       <HabitCard

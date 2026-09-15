@@ -16,9 +16,7 @@ const FILTERS: { key: FilterOption; label: string }[] = [
   { key: 'not_done', label: 'Not done today' },
 ]
 
-// HabitFilter: a row of chip filters (All / Done today / Not done today).
-// The active chip is highlighted and tapping one reports the new filter via
-// `onChange`, which the list screen uses to filter the FlatList.
+// Renders completion filter chips and reports the selected option to the parent.
 export default function HabitFilter({ selected, onChange }: HabitFilterProps) {
   const { colors } = useTheme()
   const textStyles = getTextStyles(colors)

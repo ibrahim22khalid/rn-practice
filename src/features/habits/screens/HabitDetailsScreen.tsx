@@ -37,6 +37,7 @@ type DayMutationContext = Readonly<{
   listSnapshots: ReturnType<typeof getAffectedHabitListSnapshots>;
 }>;
 
+// Applies a day completion change immutably and keeps the streak non-negative.
 function updateHabitDay(
   habit: Habit,
   { dayIndex, done }: SetHabitDayDoneInput,
@@ -84,6 +85,7 @@ export default function HabitDetailScreen() {
   >({
     mutationFn: setHabitDayDone,
     retry: false,
+    // Snapshots affected caches and applies the selected day immediately.
     onMutate: async (variables) => {
       const detailKey = habitKeys.detail(variables.habitId);
       await queryClient.cancelQueries({ queryKey: habitKeys.lists() });
@@ -110,6 +112,7 @@ export default function HabitDetailScreen() {
 
       return { listSnapshots, previousDetail };
     },
+    // Restores the captured list and detail values when the mutation fails.
     onError: (_error, variables, context) => {
       if (!context) return;
       for (const snapshot of context.listSnapshots) {
@@ -120,6 +123,7 @@ export default function HabitDetailScreen() {
         context.previousDetail,
       );
     },
+    // Stores the authoritative detail and refreshes all habit list variants.
     onSuccess: async (serverHabit, variables) => {
       queryClient.setQueryData(
         habitKeys.detail(variables.habitId),
@@ -134,6 +138,7 @@ export default function HabitDetailScreen() {
   const areDayActionsDisabled =
     isHabitMutationPending || isForcedFailureArmed;
 
+  // Submits the opposite explicit completion value while blocking duplicate taps.
   const handleToggle = (): void => {
     if (!habit || isHabitMutationPending || !submissionGuard.tryStart()) return;
 
@@ -145,6 +150,7 @@ export default function HabitDetailScreen() {
     markDoneMutation.mutate(variables, { onSettled: submissionGuard.finish });
   };
 
+  // Replays the exact variables from the last completion mutation.
   const handleRetry = (): void => {
     const originalVariables = markDoneMutation.variables;
     if (
@@ -159,6 +165,7 @@ export default function HabitDetailScreen() {
     });
   };
 
+  // Optimistically toggles one day in the selected habit's seven-day history.
   const handleDayToggle = (dayIndex: number): void => {
     if (!habit || areDayActionsDisabled) return;
     dayMutation.mutate({
@@ -168,6 +175,7 @@ export default function HabitDetailScreen() {
     });
   };
 
+  // Configures the fake API so the next completion mutation demonstrates rollback.
   const armForcedFailure = (): void => {
     if (isHabitMutationPending) return;
     failNextMutation();

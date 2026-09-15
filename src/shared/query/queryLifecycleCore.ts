@@ -21,16 +21,19 @@ export type QueryLifecycleDependencies = Readonly<{
   reportInitialNetworkError: (error: unknown) => void;
 }>;
 
+// Converts the platform network payload into the strict boolean TanStack Query expects.
 export function mapNetworkStateToOnline(
   state: NetworkConnectionState,
 ): boolean {
   return state.isConnected === true;
 }
 
+// Treats only the active app state as focused for query refetch behavior.
 export function mapAppStateToFocused(state: AppStateStatus): boolean {
   return state === "active";
 }
 
+// Connects platform network and app-state events to query lifecycle managers.
 export function setupQueryLifecycle(
   dependencies: QueryLifecycleDependencies,
 ): RemoveListener {

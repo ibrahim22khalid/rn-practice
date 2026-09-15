@@ -21,21 +21,25 @@ export type MutationSubmissionGuard = Readonly<{
   finish: () => void;
 }>;
 
+// Creates a small lock that prevents duplicate mutation submissions while one is active.
 export function createMutationSubmissionGuard(): MutationSubmissionGuard {
   let isSubmissionInFlight = false;
 
   return {
+    // Acquires the submission lock unless another completion request is active.
     tryStart: () => {
       if (isSubmissionInFlight) return false;
       isSubmissionInFlight = true;
       return true;
     },
+    // Releases the submission lock after the active request settles.
     finish: () => {
       isSubmissionInFlight = false;
     },
   };
 }
 
+// Applies a completion value immutably to the matching habit in cached list data.
 export function updateHabitDoneInList(
   habits: Habit[] | undefined,
   { habitId, done }: SetHabitDoneInput,
@@ -47,6 +51,7 @@ export function updateHabitDoneInList(
   );
 }
 
+// Applies a completion value only when the cached detail belongs to the target habit.
 export function updateHabitDoneInDetail(
   habit: Habit | undefined,
   { habitId, done }: SetHabitDoneInput,
@@ -55,6 +60,7 @@ export function updateHabitDoneInDetail(
   return { ...habit, doneToday: done };
 }
 
+// Captures every cached habit list containing the target so it can be updated or restored.
 export function getAffectedHabitListSnapshots(
   queryClient: QueryClient,
   habitId: Habit["id"],
@@ -68,10 +74,12 @@ export function getAffectedHabitListSnapshots(
     );
 }
 
+// Defines the optimistic update, rollback, and server reconciliation lifecycle.
 export function createSetHabitDoneMutationOptions(queryClient: QueryClient) {
   return {
     mutationFn: setHabitDone,
     retry: false as const,
+    // Cancels competing reads, snapshots the cache, and applies the intended value immediately.
     onMutate: async (
       variables: SetHabitDoneInput,
     ): Promise<SetHabitDoneMutationContext> => {
@@ -113,6 +121,7 @@ export function createSetHabitDoneMutationOptions(queryClient: QueryClient) {
 
       return { listSnapshots, detailKey, previousDetail };
     },
+    // Restores every captured cache entry if the server mutation fails.
     onError: (
       _error: Error,
       variables: SetHabitDoneInput,
@@ -136,6 +145,7 @@ export function createSetHabitDoneMutationOptions(queryClient: QueryClient) {
         });
       }
     },
+    // Replaces detail data with the server result and refreshes all list variants.
     onSuccess: async (
       serverHabit: Habit,
       variables: SetHabitDoneInput,

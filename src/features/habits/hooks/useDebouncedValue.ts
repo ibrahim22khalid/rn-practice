@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+// Delays publishing a changing value until it has remained stable for the given interval.
 export function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
 

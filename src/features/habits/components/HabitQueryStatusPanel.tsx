@@ -16,6 +16,7 @@ type HabitQueryStatusPanelProps = Readonly<{
   dataUpdatedAt: number;
 }>;
 
+// Displays development-only query, connectivity, focus, and freshness diagnostics.
 export default function HabitQueryStatusPanel({
   status,
   fetchStatus,
