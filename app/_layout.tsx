@@ -7,6 +7,7 @@ import {
 import { DevToolsBubble } from "react-native-react-query-devtools";
 import { ThemeProvider } from "../src/shared/theme/ThemeContext";
 import { setupMobileQueryLifecycle } from "../src/shared/query/mobileQueryLifecycle";
+import { RevenueCatProvider } from "../src/features/payment/providers/RevenueCatProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,14 +24,17 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Stack>
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-            }}
-          />
-        </Stack>
+        {/* Mounts the payment integration once above navigation so tab changes cannot reconfigure RevenueCat. */}
+        <RevenueCatProvider>
+          <Stack>
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+              }}
+            />
+          </Stack>
+        </RevenueCatProvider>
       </ThemeProvider>
       {/* React Query Devtools are only available in development mode. */}
       {__DEV__ && <DevToolsBubble queryClient={queryClient} />}
