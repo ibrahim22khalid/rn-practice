@@ -32,6 +32,13 @@ export default function TabsLayout() {
             title: "Habits",
           }}
         />
+
+        <Tabs.Screen
+          name="payment"
+          options={{
+            title: "Payment",
+          }}
+        />
       </Tabs>
       <BottomTabBar />
     </View>

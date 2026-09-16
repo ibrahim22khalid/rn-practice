@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter, usePathname } from "expo-router";
+import type { Href } from "expo-router";
+import type { ComponentType } from "react";
 
 import { useTheme } from "../theme/ThemeContext";
 
@@ -17,11 +19,56 @@ import ActiveHabitsIcon from "../../assets/icons/active_habits_tab.svg";
 import InactiveHabitsIcon from "../../assets/icons/non_active_habits_tab.svg";
 
 type TabConfig = {
-  name: string;
-  href: string;
-  activeIcon: React.ComponentType<any>;
-  inactiveIcon: React.ComponentType<any>;
+  name: "analytics" | "profile" | "habits" | "payment";
+  href: Href;
+  activeIcon: ComponentType<TabIconProps>;
+  inactiveIcon: ComponentType<TabIconProps>;
 };
+
+type TabIconProps = {
+  width: number;
+  height: number;
+};
+
+function PaymentTabIcon({
+  width,
+  height,
+  active,
+}: TabIconProps & { active: boolean }) {
+  const { colors } = useTheme();
+  const iconColor = active ? colors.primary : colors.textSecondary;
+
+  return (
+    <View
+      style={[
+        styles.paymentIcon,
+        {
+          width,
+          height: height * 0.72,
+          borderColor: iconColor,
+          backgroundColor: active ? iconColor : "transparent",
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.paymentIconStripe,
+          {
+            backgroundColor: active ? colors.background : iconColor,
+          },
+        ]}
+      />
+    </View>
+  );
+}
+
+function ActivePaymentIcon(props: TabIconProps) {
+  return <PaymentTabIcon {...props} active />;
+}
+
+function InactivePaymentIcon(props: TabIconProps) {
+  return <PaymentTabIcon {...props} active={false} />;
+}
 
 const TABS: TabConfig[] = [
   {
@@ -42,23 +89,20 @@ const TABS: TabConfig[] = [
     activeIcon: ActiveHabitsIcon,
     inactiveIcon: InactiveHabitsIcon,
   },
+  {
+    name: "payment",
+    href: "/(tabs)/payment",
+    activeIcon: ActivePaymentIcon,
+    inactiveIcon: InactivePaymentIcon,
+  },
 ];
 
 export default function BottomTabBar() {
-  const { colors } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAnalyticsActive = pathname.startsWith("/analytics");
-  const isProfileActive = pathname.startsWith("/profile");
-  const isHabitsActive = pathname.startsWith("/habits");
-
-  const isFocused = (name: string) => {
-    if (name === "analytics") return isAnalyticsActive;
-    if (name === "profile") return isProfileActive;
-    if (name === "habits") return isHabitsActive;
-    return false;
-  };
+  const isFocused = (name: TabConfig["name"]) =>
+    pathname.startsWith(`/${name}`);
 
   return (
     <View style={[styles.wrapper, { bottom: 16 }]}>
@@ -70,7 +114,10 @@ export default function BottomTabBar() {
           return (
             <Pressable
               key={tab.name}
-              onPress={() => router.push(tab.href as any)}
+              onPress={() => router.push(tab.href)}
+              accessibilityRole="button"
+              accessibilityLabel={`${tab.name} tab`}
+              accessibilityState={{ selected: focused }}
               style={styles.tab}
             >
               {({ pressed }) => (
@@ -111,5 +158,14 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  paymentIcon: {
+    justifyContent: "center",
+    borderWidth: 2,
+    borderRadius: 3,
+  },
+  paymentIconStripe: {
+    width: "100%",
+    height: 2,
   },
 });
