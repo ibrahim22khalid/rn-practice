@@ -371,8 +371,10 @@ export default function HabitListScreen() {
             {__DEV__ && (
               <View style={[styles.demoPanel, { borderColor: colors.border }]}>
                 <Text style={textStyles.caption}>
-                  Demo: "heart" {SEARCH_RACE_SCENARIO.slow.delayMs}ms then
-                  "healing" {SEARCH_RACE_SCENARIO.fast.delayMs}ms
+                  {'Demo: "heart" '}
+                  {SEARCH_RACE_SCENARIO.slow.delayMs}
+                  {'ms then "healing" '}
+                  {SEARCH_RACE_SCENARIO.fast.delayMs}ms
                 </Text>
                 <Text style={textStyles.caption}>
                   Focus stale time: {HABIT_QUERY_STALE_TIME_MS}ms
